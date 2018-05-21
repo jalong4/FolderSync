@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.image.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.jimlong.FolderSync.MainController">
+   <children>
+      <MenuBar fx:id="menuBar" layoutX="14.0" layoutY="14.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <menus>
+          <Menu fx:id="fileMenu" mnemonicParsing="false" text="File">
+            <items>
+              <MenuItem fx:id="openSourceFolderMenuItem" mnemonicParsing="false" text="Open Source Folder..." />
+                  <MenuItem fx:id="openDestinationFolderMenuItem" mnemonicParsing="false" text="Open Destination Folder..." />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="quitMenuItem" mnemonicParsing="false" text="Quit" />
+            </items>
+          </Menu>
+          <Menu fx:id="taskMenu" mnemonicParsing="false" text="Tasks">
+            <items>
+              <MenuItem fx:id="checksumSourceFolderMenuItem" mnemonicParsing="false" text="Checksum Source Folder..." />
+                  <MenuItem fx:id="checksumDestinationFolderMenuItem" mnemonicParsing="false" text="Checksum Destination Folder..." />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="compareFoldersMenuItem" mnemonicParsing="false" text="Compare Folders..." />
+            </items>
+          </Menu>
+          <Menu fx:id="helpMenu" mnemonicParsing="false" text="Help">
+            <items>
+              <MenuItem mnemonicParsing="false" text="About" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <Group AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="40.0">
+         <children>
+            <Label layoutX="27.0" layoutY="46.0" prefHeight="35.0" prefWidth="118.0" text="Source Folder:" />
+            <Label fx:id="sourceFolderLabel" layoutX="177.0" layoutY="46.0" prefHeight="35.0" prefWidth="306.0" />
+            <ProgressBar fx:id="sourceProgressBar" layoutX="501.0" layoutY="54.0" prefWidth="200.0" progress="0.0" />
+         </children>
+      </Group>
+      <Group layoutX="10.0" layoutY="10.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="80.0">
+         <children>
+            <Label fx:id="sourceFolderLabel11" layoutX="27.0" layoutY="46.0" prefHeight="35.0" prefWidth="118.0" text="Destination Folder:" />
+            <Label fx:id="destinationFolderLabel" layoutX="177.0" layoutY="46.0" prefHeight="35.0" prefWidth="306.0" />
+            <ProgressBar fx:id="destinationProgressBar" layoutX="501.0" layoutY="54.0" prefWidth="200.0" progress="0.0" />
+         </children>
+      </Group>
+      <Group layoutX="3.0" layoutY="44.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="120.0">
+         <children>
+            <Label fx:id="sourceFolderLabel111" layoutX="27.0" layoutY="46.0" prefHeight="35.0" prefWidth="118.0" text="Compare Folders:" />
+            <Label fx:id="CompareFoldersLabel" layoutX="177.0" layoutY="46.0" prefHeight="35.0" prefWidth="306.0" text="Source Folder vs Destination Folder" />
+            <ProgressBar fx:id="compareProgressBar" layoutX="501.0" layoutY="54.0" prefWidth="200.0" progress="0.0" />
+         </children>
+      </Group>
+      <TreeView fx:id="treeView" layoutX="14.0" layoutY="157.0" prefHeight="432.0" prefWidth="260.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="180.0" />
+      <TableView fx:id="tableView" layoutX="293.0" layoutY="140.0" prefHeight="200.0" prefWidth="512.0" AnchorPane.leftAnchor="288.0" AnchorPane.rightAnchor="8.0" AnchorPane.topAnchor="180.0">
+        <columns>
+          <TableColumn fx:id="nameCol" prefWidth="164.0" text="Name" />
+            <TableColumn fx:id="dateCreatedCol" prefWidth="114.0" text="Date Created" />
+            <TableColumn fx:id="kindCol" prefWidth="72.0" text="Kind" />
+            <TableColumn fx:id="sizeCol" prefWidth="48.0" text="Size" />
+          <TableColumn fx:id="checksumCol" minWidth="0.0" prefWidth="104.0" text="Checksum" />
+        </columns>
+      </TableView>
+      <ImageView fx:id="imageView" fitHeight="200.0" fitWidth="200.0" layoutX="440.0" layoutY="386.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="440.0" AnchorPane.rightAnchor="160.0" AnchorPane.topAnchor="386.0" />
+   </children>
+</AnchorPane>
