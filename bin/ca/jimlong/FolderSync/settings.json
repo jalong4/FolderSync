@@ -1,7 +1,7 @@
 {
-    "srcFolder": "/Volumes/Files/Test/folder1",
-    "destFolder": "/Volumes/Files/Test/folder2",
-    "srcFolder2": "/Volumes/Files/Google/Google Photos/2017/02",
-    "destFolder2": "/Volumes/Files/Google/Media/Pictures/2017/02 - Feb",
+    "srcFolder2": "/Volumes/Files/Test/folder1",
+    "destFolder2": "/Volumes/Files/Test/folder2",
+    "srcFolder": "/Volumes/Files/Google/Google Photos/2017/02",
+    "destFolder": "/Volumes/Files/Google/Media/Pictures/2017/02 - Feb",
     "validFiletypes": ["jpg", "png", "heic", "gif", "mov", "mp4", "jpeg", "nef"]
 }

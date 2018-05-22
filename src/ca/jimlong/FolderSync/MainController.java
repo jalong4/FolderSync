@@ -100,6 +100,9 @@ public class MainController implements Initializable {
 
     @FXML
     private TableColumn<ChecksumFileProperties, String> checksumCol;
+    
+    @FXML
+    private TableColumn<ChecksumFileProperties, String> locationCol;
 
     @FXML
     private TableColumn<ChecksumFileProperties, String> nameCol;
@@ -153,7 +156,8 @@ public class MainController implements Initializable {
 		dateCreatedCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("dateCreated"));
 		kindCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("kind"));
 		sizeCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("size"));
-		checksumCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("checksum"));		
+		checksumCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("checksum"));	
+		locationCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("location"));	
 	
 	}
 
