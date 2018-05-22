@@ -6,7 +6,7 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.jimlong.FolderSync.MainController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.jimlong.FolderSync.MainController">
    <children>
       <MenuBar fx:id="menuBar" layoutX="14.0" layoutY="14.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <menus>
@@ -54,14 +54,14 @@
             <ProgressBar fx:id="compareProgressBar" layoutX="501.0" layoutY="54.0" prefWidth="200.0" progress="0.0" />
          </children>
       </Group>
-      <TreeView fx:id="treeView" layoutX="14.0" layoutY="157.0" prefHeight="432.0" prefWidth="260.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="180.0" />
-      <TableView fx:id="tableView" layoutX="293.0" layoutY="140.0" prefHeight="200.0" prefWidth="512.0" AnchorPane.leftAnchor="288.0" AnchorPane.rightAnchor="8.0" AnchorPane.topAnchor="180.0">
+      <TreeView fx:id="treeView" layoutX="14.0" layoutY="157.0" prefHeight="412.0" prefWidth="230.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="180.0" />
+      <TableView fx:id="tableView" layoutX="254.0" layoutY="140.0" prefHeight="200.0" prefWidth="640.0" AnchorPane.leftAnchor="254.0" AnchorPane.rightAnchor="4.0" AnchorPane.topAnchor="180.0">
         <columns>
-          <TableColumn fx:id="nameCol" prefWidth="164.0" text="Name" />
-            <TableColumn fx:id="dateCreatedCol" prefWidth="114.0" text="Date Created" />
-            <TableColumn fx:id="kindCol" prefWidth="72.0" text="Kind" />
-            <TableColumn fx:id="sizeCol" prefWidth="48.0" text="Size" />
-          <TableColumn fx:id="checksumCol" minWidth="0.0" prefWidth="104.0" text="Checksum" />
+          <TableColumn fx:id="nameCol" prefWidth="138.0" text="Name" />
+            <TableColumn fx:id="dateCreatedCol" prefWidth="156.0" text="Date Created" />
+            <TableColumn fx:id="kindCol" prefWidth="50.0" text="Kind" />
+            <TableColumn fx:id="sizeCol" prefWidth="48.0" style="-fx-alignment: CENTER-RIGHT;" text="Size" />
+          <TableColumn fx:id="checksumCol" minWidth="0.0" prefWidth="248.0" style="-fx-alignment: CENTER-LEFT;" text="Checksum" />
         </columns>
       </TableView>
       <ImageView fx:id="imageView" fitHeight="200.0" fitWidth="200.0" layoutX="440.0" layoutY="386.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="440.0" AnchorPane.rightAnchor="160.0" AnchorPane.topAnchor="386.0" />

@@ -153,8 +153,7 @@ public class MainController implements Initializable {
 		dateCreatedCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("dateCreated"));
 		kindCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("kind"));
 		sizeCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("size"));
-		checksumCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("checksum"));
-		
+		checksumCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("checksum"));		
 	
 	}
 
@@ -188,6 +187,8 @@ public class MainController implements Initializable {
 							performCompareFolders();
 						}
 					}
+				} else if (folder.equals("Folders")) {
+					performAllTasks();
 				}
 			} else if (e.getButton() == MouseButton.PRIMARY) {
 				if (parentFolder.equals("Source Folder"))
@@ -199,6 +200,8 @@ public class MainController implements Initializable {
 						tableView.setItems(compareTwoFolders.notInOther);
 					} else if (folder.startsWith("Dest Files ->")) {
 						tableView.setItems(compareTwoFolders.notInThis);
+					} else if (folder.startsWith("Matched Files")) {
+						tableView.setItems(compareTwoFolders.matched);
 					} else {
 						System.out.println("Unknown folder: " + folder);
 					}
@@ -207,7 +210,8 @@ public class MainController implements Initializable {
 			
         });
 	}
-	
+
+
 	private void populateTableView(ChecksumFolder parent, String folder) {
 		
 		if (folder.startsWith("Duplicates")) {
@@ -234,7 +238,9 @@ public class MainController implements Initializable {
             sourceFolderLabel.setText(settings.getSrcFolder());
             src = null;
             compareTwoFolders = null;
-            resetTreeView();
+
+            sourceFolderTreeItem.getChildren().clear();
+            comparisionResultsTreeItem.getChildren().clear();
             compareFoldersMenuItem.setDisable(true);
             sourceProgressBar.setVisible(false);
             showFolderDetailsOnTreeView(src, sourceFolderTreeItem);
@@ -249,7 +255,8 @@ public class MainController implements Initializable {
             destinationFolderLabel.setText(settings.getDestFolder());
             dest = null;
             compareTwoFolders = null;
-            resetTreeView();
+            destinationFolderTreeItem.getChildren().clear();
+            comparisionResultsTreeItem.getChildren().clear();
             compareFoldersMenuItem.setDisable(true);
             destinationProgressBar.setVisible(false);
             showFolderDetailsOnTreeView(dest, destinationFolderTreeItem);
@@ -269,6 +276,14 @@ public class MainController implements Initializable {
         compareFoldersMenuItem.setOnAction(e -> {
             performCompareFolders(); 
         });
+        
+		
+		compareFoldersMenuItem.disableProperty().addListener(e -> {
+			System.out.println("event fired!!!");
+			if (!compareFoldersMenuItem.isDisable()) {
+				performCompareFolders();
+			}
+		});
 
         quitMenuItem.setOnAction(e -> {
             window.close();
@@ -280,7 +295,8 @@ public class MainController implements Initializable {
 		File folder = new File(settings.getDestFolder());
         dest = null;
         compareTwoFolders = null;
-        resetTreeView();
+        destinationFolderTreeItem.getChildren().clear();
+        comparisionResultsTreeItem.getChildren().clear();
 		dest = new ChecksumFolder(folder, settings.getValidFiletypes());
 		destinationProgressBar.progressProperty().bind(dest.percentComplete);
 		destinationProgressBar.setVisible(true);
@@ -300,7 +316,8 @@ public class MainController implements Initializable {
 		File folder = new File(settings.getSrcFolder());
         src = null;
         compareTwoFolders = null;
-        resetTreeView();
+        sourceFolderTreeItem.getChildren().clear();
+        comparisionResultsTreeItem.getChildren().clear();
 		src = new ChecksumFolder(folder, settings.getValidFiletypes());
 		sourceProgressBar.progressProperty().bind(src.percentComplete);
 		sourceProgressBar.setVisible(true);
@@ -319,7 +336,7 @@ public class MainController implements Initializable {
 
 	private void performCompareFolders() {
         compareTwoFolders = null;
-        resetTreeView();
+        comparisionResultsTreeItem.getChildren().clear();
 		compareProgressBar.progressProperty().bind(src.comparePercentComplete);
 		compareProgressBar.setVisible(true);
 		new Thread() {
@@ -329,6 +346,13 @@ public class MainController implements Initializable {
 		        showFolderComparisonDetailsOnTreeView();
 		    }
 		}.start();
+	}
+	
+    
+	
+	private void performAllTasks() {
+		performChecksumForSrcFolder();
+		performChecksumForDestFolder();
 	}
 	
 	
@@ -365,17 +389,19 @@ public class MainController implements Initializable {
 		if (compareTwoFolders.notInThis.size() > 0) {
 			comparisionResultsTreeItem.getChildren().add(new TreeItem<String>("Dest Files -> Src Folder ("  + Integer.toString(compareTwoFolders.notInThis.size()) + ")"));
 		}
+		
+		if (compareTwoFolders.matched.size() > 0) {
+			comparisionResultsTreeItem.getChildren().add(new TreeItem<String>("Matched Files ("  + Integer.toString(compareTwoFolders.matched.size()) + ")"));
+		}
 				
 		if (comparisionResultsTreeItem.getChildren().size() == 0) {
 			if (src == null || src.map.size() == 0) {
 				comparisionResultsTreeItem.getChildren().add(new TreeItem<String>("Source Folder must have files"));
-			} else {
-				comparisionResultsTreeItem.getChildren().add(new TreeItem<String>("Folders are sync'd"));
 			}
 		}
 		comparisionResultsTreeItem.setExpanded(true);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void setTreeView() {
 		root = new TreeItem<String>();
@@ -392,16 +418,6 @@ public class MainController implements Initializable {
 		root.getChildren().addAll(sourceFolderTreeItem, destinationFolderTreeItem, comparisionResultsTreeItem);
 		root.setExpanded(true);
 				
-	}
-	
-	private void resetTreeView() {
-		setTreeView();
-		showFolderDetailsOnTreeView(src, sourceFolderTreeItem);
-		showFolderDetailsOnTreeView(dest, destinationFolderTreeItem);
-		showFolderComparisonDetailsOnTreeView();
-			
-	}
-			
-	
+	}	
 
 }

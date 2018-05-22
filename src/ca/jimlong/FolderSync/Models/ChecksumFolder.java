@@ -203,62 +203,73 @@ public class ChecksumFolder {
         Iterator<String> src = map.keySet().iterator();
         Iterator<String> dest = other.map.keySet().iterator();
 
-        String srcKey = src.next();
-
+        String srcKey = null;
+        String destKey = null;
 
         int total = this.map.size() + other.map.size();
-        double current = 2.0;  // got the first two already
-
-        if (other.map.size() > 0) {
-            String destKey = dest.next();
+        double current = 0;
 	  
-	        while (src.hasNext() && (dest != null) && dest.hasNext()) {
-	            // System.out.println( "Src file: " + map.get(srcKey) + ", Dest file: " + other.map.get(destKey));
-	            int compareTo = srcKey.compareTo(destKey);
-	
-	            if (compareTo == 0) {
-	                srcKey = src.next();
-	                destKey = dest.next(); 
-	                current += 2;
-	
-	            } else if (compareTo < 0) {  // src < dest
-	                // System.out.println("Not in Dest -> Filename: " + map.get(srcKey) + " Checksum: " + srcKey);
-	                compareTwoFolders.notInOther.add(map.get(srcKey));
-	                srcKey = src.next();
-	                current++;
-	            } else {
-	                // System.out.println("Not in Src -> Filename: " + other.map.get(destKey) + " Checksum: " + destKey);
-	                compareTwoFolders.notInThis.add(other.map.get(destKey));
-	                destKey = dest.next(); 
-	                current++;
-	            }
-	
-	            final double percent = new Double(current / total).doubleValue();
-	            Platform.runLater(() -> comparePercentComplete.set(percent));
-	            try {
-	                Thread.sleep(100); 
-	            } catch(InterruptedException ex) {
-	                Thread.currentThread().interrupt();
-	            }
-	        }
-	        
-	        
-	        while (dest.hasNext()) {
-	            // System.out.println("Not in Src -> Filename: " + other.map.get(destKey) + " Checksum: " + destKey);
-	            compareTwoFolders.notInThis.add(other.map.get(destKey));
-	            destKey = dest.next();
-	            current++;
+        while (src.hasNext() && dest.hasNext()) {
+        	srcKey = src.next();
+        	destKey = dest.next();
 
-	            final double percent = new Double(current / total).doubleValue();
-	            Platform.runLater(() -> comparePercentComplete.set(percent));
-	            try {
-	                Thread.sleep(100); 
-	            } catch(InterruptedException ex) {
-	                Thread.currentThread().interrupt();
-	            }
-	        }
-	        
+        	// System.out.println( "Src file: " + map.get(srcKey) + ", Dest file: " + other.map.get(destKey));
+        	int compareTo = srcKey.compareTo(destKey);
+
+        	if (compareTo == 0) {
+        		compareTwoFolders.matched.add(map.get(srcKey));
+        		srcKey = src.next();
+        		destKey = dest.next(); 
+        		current += 2;	            		
+        	} else if (compareTo < 0) {  // src < dest
+        		// System.out.println("Not in Dest -> Filename: " + map.get(srcKey) + " Checksum: " + srcKey);
+        		compareTwoFolders.notInOther.add(map.get(srcKey));
+        		srcKey = src.next();
+        		current++;
+        	} else {
+        		// System.out.println("Not in Src -> Filename: " + other.map.get(destKey) + " Checksum: " + destKey);
+        		compareTwoFolders.notInThis.add(other.map.get(destKey));
+        		destKey = dest.next(); 
+        		current++;	            		
+        	}
+
+        	final double percent = new Double(current / total).doubleValue();
+        	Platform.runLater(() -> comparePercentComplete.set(percent));
+        	try {
+        		Thread.sleep(100); 
+        	} catch(InterruptedException ex) {
+        		Thread.currentThread().interrupt();
+        	}
         }
+
+    	if (srcKey.compareTo(destKey) == 0) {
+    		compareTwoFolders.matched.add(map.get(srcKey));
+    		current += 2;
+        	final double percent = new Double(current / total).doubleValue();
+        	Platform.runLater(() -> comparePercentComplete.set(percent));
+        	try {
+        		Thread.sleep(100); 
+        	} catch(InterruptedException ex) {
+        		Thread.currentThread().interrupt();
+        	}
+    	}
+
+
+        while (dest.hasNext()) {
+        	// System.out.println("Not in Src -> Filename: " + other.map.get(destKey) + " Checksum: " + destKey);
+        	compareTwoFolders.notInThis.add(other.map.get(destKey));
+        	destKey = dest.next();
+        	current++;
+
+        	final double percent = new Double(current / total).doubleValue();
+        	Platform.runLater(() -> comparePercentComplete.set(percent));
+        	try {
+        		Thread.sleep(100); 
+        	} catch(InterruptedException ex) {
+        		Thread.currentThread().interrupt();
+        	}
+        }
+	        
 
         while (src.hasNext()) {
             // System.out.println("Not in Dest -> Filename: " + map.get(srcKey) + " Checksum: " + srcKey);

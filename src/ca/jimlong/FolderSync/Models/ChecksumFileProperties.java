@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,7 +38,7 @@ public class ChecksumFileProperties {
 			e.printStackTrace();
 		}
 	    
-	    String dateCreated =  (attr == null) ? "" : attr.creationTime().toString();
+	    String dateCreated =  (attr == null) ? "" : getFormattedDate(attr.creationTime());
 		String kind = FileUtils.getFileType(name);
 		long size = file.length();
 		
@@ -49,6 +51,12 @@ public class ChecksumFileProperties {
 		
 	}
 	
+	private String getFormattedDate(FileTime date) {
+
+		SimpleDateFormat df = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a");
+		return df.format(date.toMillis());
+	}
+
 	public File getFile(){
 		return file;
 	}

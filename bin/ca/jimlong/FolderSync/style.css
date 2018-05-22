@@ -9,3 +9,6 @@ Pane {
 	-fx-border-radius: 0 0 0 0;
 	-fx-background-radius: 0 0 0 0;
 }
+.table-column {
+	-fx-font-size: 12;
+}
