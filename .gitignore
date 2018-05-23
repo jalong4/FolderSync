@@ -4,6 +4,7 @@
 # Log file
 *.log
 
+.cache.json
 
 # Package Files #
 *.jar

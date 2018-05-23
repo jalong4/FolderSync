@@ -10,6 +10,27 @@ public class Settings {
     private String srcFolder;
     private String destFolder;
     private List<String> validFiletypes;
+    private String cacheFile;
+	public Constants constants = new Constants();
+    
+    public class Constants {
+
+    	public class FolderNames {
+    		public String rootFolder = "";
+    		public String srcFolder = "";
+    		public String destFolder  = "";
+    		public String skippedFiles = "";
+    		public String uniqueFiles = "";
+    		public String duplicateFiles = "";
+    		public String comparisonResults = "";
+    		public String notInThis  = "";
+    		public String notInOther = "";
+    		public String matched  = "";
+    	}
+
+    	public FolderNames folderNames = new FolderNames();
+    }
+    
 
 	public String getSrcFolder() {
 		return srcFolder;
@@ -29,6 +50,10 @@ public class Settings {
 
 	public List<String> getValidFiletypes() {
 		return validFiletypes;
+	}
+
+	public String getCacheFile() {
+		return cacheFile;
 	}
 
 	public Settings(File settingsFile) {
@@ -51,6 +76,8 @@ public class Settings {
 		this.srcFolder = settings.srcFolder;
 		this.destFolder = settings.destFolder;
 		this.validFiletypes = settings.validFiletypes;
+		this.cacheFile = settings.cacheFile;
+		this.constants = settings.constants;
 	}
 
 

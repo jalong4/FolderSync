@@ -1,6 +1,8 @@
 package ca.jimlong.FolderSync;
 
+import java.nio.file.*;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -8,12 +10,14 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
+import ca.jimlong.FolderSync.Models.ChecksumCache;
 import ca.jimlong.FolderSync.Models.ChecksumFileProperties;
 import ca.jimlong.FolderSync.Models.ChecksumFolder;
 import ca.jimlong.FolderSync.Models.CompareTwoFolders;
 import ca.jimlong.FolderSync.Models.Settings;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
@@ -21,6 +25,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TreeItem;
@@ -152,6 +157,7 @@ public class MainController implements Initializable {
     private Stage window;
     private ChecksumFolder src;
     private ChecksumFolder dest;
+    private ChecksumCache cache;
     
 	private CompareTwoFolders compareTwoFolders;
     private Settings settings;
@@ -161,7 +167,6 @@ public class MainController implements Initializable {
     }
     
     
-	@SuppressWarnings("unchecked")
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		System.out.println( "Launching Folder Sync Application..." );
@@ -176,6 +181,7 @@ public class MainController implements Initializable {
         
         File file = new File(getClass().getResource(settingsFile).getFile());
         settings = new Settings(file);
+        cache = new ChecksumCache(settings.getCacheFile());
         
 		sourceFolderLabel.setText(settings.getSrcFolder());
 		destinationFolderLabel.setText(settings.getDestFolder());
@@ -221,18 +227,17 @@ public class MainController implements Initializable {
 //			if (e.getClickCount() == 2) {
 			
 			TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
-			String folder = item.getValue();	
+			String folder = item.getValue();
 			String parentFolder = item.getParent() == null ? "(No Parent)" : item.getParent().getValue();
-			
-			System.out.println(folder + " parent: " + parentFolder + " Child count: " + Integer.toString(item.getChildren().size()));
-			
+
+				
 			if (e.getButton() == MouseButton.SECONDARY) {				
 				if (item.getChildren().size() == 0) {
-					if (folder.equals("Source Folder")) {
+					if (folder.equals(settings.constants.folderNames.srcFolder)) {
 						performChecksumForSrcFolder();
-					} else if (folder.equals("Destination Folder")) {
+					} else if (folder.equals(settings.constants.folderNames.destFolder)) {
 						performChecksumForDestFolder();
-					} else if (folder.equals("Comparison Results")) {
+					} else if (folder.equals(settings.constants.folderNames.comparisonResults)) {
 						if (!compareFoldersMenuItem.isDisable()) {
 							performCompareFolders();
 						}
@@ -241,23 +246,26 @@ public class MainController implements Initializable {
 					performAllTasks();
 				}
 			} else if (e.getButton() == MouseButton.PRIMARY) {
-				if (parentFolder.equals("Source Folder"))
+				if (parentFolder.equals(settings.constants.folderNames.srcFolder))
 					populateTableView(src, folder);
-				else if (parentFolder.equals("Destination Folder")) {
+				else if (parentFolder.equals(settings.constants.folderNames.destFolder)) {
 					populateTableView(dest, folder);
-				} else if (parentFolder.equals("Comparison Results")) {
-					if (folder.startsWith("Src Files ->")) {
+				} else if (parentFolder.equals(settings.constants.folderNames.comparisonResults)) {
+					if (folder.startsWith(settings.constants.folderNames.notInOther)) {
 						tableView.setItems(compareTwoFolders.notInOther);
-					} else if (folder.startsWith("Dest Files ->")) {
+					} else if (folder.startsWith(settings.constants.folderNames.notInThis)) {
 						tableView.setItems(compareTwoFolders.notInThis);
-					} else if (folder.startsWith("Matched Files")) {
+					} else if (folder.startsWith(settings.constants.folderNames.matched)) {
 						tableView.setItems(compareTwoFolders.matched);
 					} else {
-						System.out.println("Unknown folder: " + folder);
+						tableView.setItems(null);
+						System.out.println("Ignoring folder: " + folder);
 					}
 				}
+				tableView.setId(parentFolder + "/" + folder);
 				dateCreatedCol.setSortType(TableColumn.SortType.ASCENDING);
 				tableView.getSortOrder().add(dateCreatedCol);
+				tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 			}
 			
         });
@@ -266,14 +274,15 @@ public class MainController implements Initializable {
 
 	private void populateTableView(ChecksumFolder parent, String folder) {
 		
-		if (folder.startsWith("Duplicates")) {
+		if (folder.startsWith(settings.constants.folderNames.duplicateFiles)) {
 			tableView.setItems(parent.duplicateFiles);
-		} else if (folder.startsWith("Unique")) {
+		} else if (folder.startsWith(settings.constants.folderNames.uniqueFiles)) {
 			tableView.setItems(parent.getObservableListOfMapValues());
-		} else if (folder.startsWith("Skipped")) {
+		} else if (folder.startsWith(settings.constants.folderNames.skippedFiles)) {
 			tableView.setItems(parent.skippedFiles);
 		} else {
-			System.out.println("Unknown folder: " + folder);
+			tableView.setItems(null);
+			System.out.println("Ignoring folder: " + folder);
 		}
 		
 	}
@@ -281,10 +290,58 @@ public class MainController implements Initializable {
 
 	private void setupMenuCallbacks() {
 		
+		selectAllMenuItem.setOnAction(e -> {
+			tableView.getSelectionModel().selectAll();
+		});
+		
+		deleteFilesMenuItem.setOnAction(e -> {
+			ObservableList<ChecksumFileProperties> selectedRows = tableView.getSelectionModel().getSelectedItems();
+			for (ChecksumFileProperties row : selectedRows) {
+				File file = row.getFile();
+				Path path = file.toPath();
+				try {
+					Files.delete(path);
+					System.out.println("Successfully deleted: " + file.getAbsolutePath());
+				} catch (DirectoryNotEmptyException error) {
+					System.out.println("Failed to deleted: " + file.getAbsolutePath());
+					error.printStackTrace();
+				} catch (IOException error) {
+					System.out.println("Failed to deleted: " + file.getAbsolutePath());
+					error.printStackTrace();
+				} catch (SecurityException error) {
+					System.out.println("Failed to deleted: " + file.getAbsolutePath());
+					error.printStackTrace();
+				}
+			}
+		});
+		
+		copyFilesMenuItem.setOnAction(e -> {
+			ObservableList<ChecksumFileProperties> selectedRows = tableView.getSelectionModel().getSelectedItems();
+			String[] tags = tableView.getId().split("\\/");
+			if (tags.length != 2) {
+				System.out.println("Invalid tags length: " + tags.length);
+				for (String tag : tags) {
+					System.out.println(tag);
+				}
+				return;
+			}
+			
+			String parentFolder = tags[0];
+			String folder = tags[1];
+			
+			System.out.println("Parent Folder: " + parentFolder + "\nFolder: " + folder);
+			for (ChecksumFileProperties row : selectedRows) {
+				File file = row.getFile();
+				Path path = file.toPath();
+				System.out.println("Copying file: " + file.getAbsolutePath());
+			}
+		});
+       
+		
         openSourceFolderMenuItem.setOnAction(e -> {
             DirectoryChooser directoryChooser = new DirectoryChooser();
             directoryChooser.setInitialDirectory(new File(settings.getSrcFolder()));
-            directoryChooser.setTitle("Select Source Folder");
+            directoryChooser.setTitle("Select " + settings.constants.folderNames.srcFolder);
             File selectedDirectory = directoryChooser.showDialog(window);
             settings.setSrcFolder(selectedDirectory == null ? "" : selectedDirectory.getAbsolutePath());
             sourceFolderLabel.setText(settings.getSrcFolder());
@@ -301,7 +358,7 @@ public class MainController implements Initializable {
         openDestinationFolderMenuItem.setOnAction(e -> {
             DirectoryChooser directoryChooser = new DirectoryChooser();
             directoryChooser.setInitialDirectory(new File(settings.getDestFolder()));
-            directoryChooser.setTitle("Select Destination Folder");
+            directoryChooser.setTitle("Select " + settings.constants.folderNames.destFolder);
             File selectedDirectory = directoryChooser.showDialog(window);
             settings.setDestFolder(selectedDirectory == null ? "" : selectedDirectory.getAbsolutePath());
             destinationFolderLabel.setText(settings.getDestFolder());
@@ -349,15 +406,20 @@ public class MainController implements Initializable {
         compareTwoFolders = null;
         destinationFolderTreeItem.getChildren().clear();
         comparisionResultsTreeItem.getChildren().clear();
-		dest = new ChecksumFolder(folder, settings.getValidFiletypes());
+		dest = new ChecksumFolder(folder, settings.getValidFiletypes(), cache);
 		destinationProgressBar.progressProperty().bind(dest.percentComplete);
 		destinationProgressBar.setVisible(true);
 
 		new Thread() {
 		    public void run() {
 		        dest.generateChecksumMapForFolder();
+	        	cache.update(dest);
+	        	boolean disabled = src == null ? true : !src.isChecksumCompleted();
+	            if (!disabled) {
+	            	cache.rewrite();
+	            }
 		        Platform.runLater(() -> {
-		            compareFoldersMenuItem.setDisable(src == null ? true : !src.isChecksumCompleted());
+		            compareFoldersMenuItem.setDisable(disabled);
 		            showFolderDetailsOnTreeView(dest, destinationFolderTreeItem);
 		        });
 		    }
@@ -370,15 +432,20 @@ public class MainController implements Initializable {
         compareTwoFolders = null;
         sourceFolderTreeItem.getChildren().clear();
         comparisionResultsTreeItem.getChildren().clear();
-		src = new ChecksumFolder(folder, settings.getValidFiletypes());
+		src = new ChecksumFolder(folder, settings.getValidFiletypes(), cache);
 		sourceProgressBar.progressProperty().bind(src.percentComplete);
 		sourceProgressBar.setVisible(true);
 
 		new Thread() {
 		    public void run() {
 		        src.generateChecksumMapForFolder();
+	        	cache.update(src);
+	        	boolean disabled = dest == null ? true : !dest.isChecksumCompleted();
+	            if (!disabled) {
+	            	cache.rewrite();
+	            }
 		        Platform.runLater(() -> {
-		            compareFoldersMenuItem.setDisable(dest == null ? true : !dest.isChecksumCompleted());
+		            compareFoldersMenuItem.setDisable(disabled);
 		            showFolderDetailsOnTreeView(src, sourceFolderTreeItem);
 		        });
 		    }
@@ -413,15 +480,15 @@ public class MainController implements Initializable {
 		if (folder == null) return;
 		
 		if (folder.duplicateFiles.size() > 0) {
-			treeItem.getChildren().add(new TreeItem<String>("Duplicates Files (" + Integer.toString(folder.duplicateFiles.size()) + ")"));			
+			treeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.duplicateFiles + " (" + Integer.toString(folder.duplicateFiles.size()) + ")"));			
 		}
 		
 		if (folder.skippedFiles.size() > 0) {
-			treeItem.getChildren().add(new TreeItem<String>("Skipped Files (" + Integer.toString(folder.skippedFiles.size()) + ")"));			
+			treeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.skippedFiles + " (" + Integer.toString(folder.skippedFiles.size()) + ")"));			
 		}
 		
 		if (folder.map.size() > 0) {
-			treeItem.getChildren().add(new TreeItem<String>("Unique Files (" + Integer.toString(folder.map.size()) + ")"));			
+			treeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.uniqueFiles + " ("  + Integer.toString(folder.map.size()) + ")"));			
 		}
 
 		if (treeItem.getChildren().size() == 0) {
@@ -435,20 +502,20 @@ public class MainController implements Initializable {
 		if (compareTwoFolders == null) return;
 		
 		if (compareTwoFolders.notInOther.size() > 0) {
-			comparisionResultsTreeItem.getChildren().add(new TreeItem<String>("Src Files -> Dest Folder ("  + Integer.toString(compareTwoFolders.notInOther.size()) + ")"));
+			comparisionResultsTreeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.notInOther + " ("  + Integer.toString(compareTwoFolders.notInOther.size()) + ")"));
 		}
 		
 		if (compareTwoFolders.notInThis.size() > 0) {
-			comparisionResultsTreeItem.getChildren().add(new TreeItem<String>("Dest Files -> Src Folder ("  + Integer.toString(compareTwoFolders.notInThis.size()) + ")"));
+			comparisionResultsTreeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.notInThis + " ("  + Integer.toString(compareTwoFolders.notInThis.size()) + ")"));
 		}
 		
 		if (compareTwoFolders.matched.size() > 0) {
-			comparisionResultsTreeItem.getChildren().add(new TreeItem<String>("Matched Files ("  + Integer.toString(compareTwoFolders.matched.size()) + ")"));
+			comparisionResultsTreeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.matched + " ("  + Integer.toString(compareTwoFolders.matched.size()) + ")"));
 		}
 				
 		if (comparisionResultsTreeItem.getChildren().size() == 0) {
 			if (src == null || src.map.size() == 0) {
-				comparisionResultsTreeItem.getChildren().add(new TreeItem<String>("Source Folder must have files"));
+				comparisionResultsTreeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.srcFolder + " must have files"));
 			}
 		}
 		comparisionResultsTreeItem.setExpanded(true);
@@ -459,11 +526,11 @@ public class MainController implements Initializable {
 		root = new TreeItem<String>();
 		treeView.setRoot(root);
 		
-		sourceFolderTreeItem = new TreeItem<String>("Source Folder", getFolderIcon());
-		destinationFolderTreeItem = new TreeItem<String>("Destination Folder", getFolderIcon());
-		comparisionResultsTreeItem = new TreeItem<String>("Comparison Results", getFolderIcon());
+		sourceFolderTreeItem = new TreeItem<String>(settings.constants.folderNames.srcFolder, getFolderIcon());
+		destinationFolderTreeItem = new TreeItem<String>(settings.constants.folderNames.destFolder, getFolderIcon());
+		comparisionResultsTreeItem = new TreeItem<String>(settings.constants.folderNames.comparisonResults, getFolderIcon());
 		
-		root.setValue("Folders");
+		root.setValue(settings.constants.folderNames.rootFolder);
 		
 
 		root.setGraphic(getFolderIcon());

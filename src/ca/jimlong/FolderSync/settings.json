@@ -1,7 +1,24 @@
 {
-    "srcFolder2": "/Volumes/Files/Test/folder1",
-    "destFolder2": "/Volumes/Files/Test/folder2",
+    "srcFolder3": "/Users/jalong4/test/folder1",
+    "destFolder3": "/Users/jalong4/test/folder2",
+    "srcFolder3": "/Volumes/Files/Test/folder1",
+    "destFolder3": "/Volumes/Files/Test/folder2",
     "srcFolder": "/Volumes/Files/Google/Google Photos/2017/03",
     "destFolder": "/Volumes/Files/Google/Media/Pictures/2017/03 - Mar",
-    "validFiletypes": ["jpg", "png", "heic", "gif", "mov", "mp4", "jpeg", "nef"]
+    "validFiletypes": ["jpg", "png", "heic", "gif", "mov", "mp4", "jpeg", "nef", "cr2"],
+    "cacheFile": ".cache.json",
+    "constants" : {
+    	"folderNames": {
+	    	"rootFolder": "Folders",
+	    	"srcFolder": "Source Folder",
+	    	"destFolder": "Destination Folder",
+	    	"skippedFiles": "Skipped Files",
+	    	"duplicateFiles": "Duplicate Files",
+	    	"uniqueFiles": "Unique Files",
+	    	"comparisonResults": "Comparison Results",
+	    	"notInThis": "Dest Files -> Src Folder",
+	    	"notInOther": "Src Files -> Dest Folder",
+	    	"matched": "Matched Files"
+	    }
+    }
 }

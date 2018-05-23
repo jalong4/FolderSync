@@ -19,6 +19,7 @@ import javafx.collections.ObservableList;
 public class ChecksumFolder {
 
     private File folder;
+    private ChecksumCache cache;
     private List<String> validFiletypes;
     public TreeMap<String, ChecksumFileProperties> map;
 
@@ -29,7 +30,7 @@ public class ChecksumFolder {
     private boolean checksumCompleted;
 
 
-    public ChecksumFolder(File folder, List<String> validFiletypes) {
+    public ChecksumFolder(File folder, List<String> validFiletypes, ChecksumCache cache) {
         this.folder = folder;
         this.validFiletypes = validFiletypes;
         this.duplicateFiles = FXCollections.observableArrayList();
@@ -38,11 +39,12 @@ public class ChecksumFolder {
         this.comparePercentComplete = new SimpleDoubleProperty(0.0);
         this.map =  new TreeMap<String, ChecksumFileProperties>();
         this.checksumCompleted = false;
-
+        this.cache = cache;
     }
 
 
-    private byte[] createChecksum(String filename) throws Exception {
+	private byte[] createChecksum(String filename) throws Exception {
+		
         InputStream fis = new FileInputStream(filename);
 
         byte[] buffer = new byte[1024];
@@ -66,6 +68,13 @@ public class ChecksumFolder {
     // see this How-to for a faster way to convert
     // a byte array to a HEX string
     private  String getMD5Checksum(String filename) {
+    	
+		
+		if (cache.getMap().containsKey(filename)){
+//			System.out.println("Checksum for: " + filename + "found in cache");
+			return cache.getMap().get(filename);
+		}
+		
 
         byte[] b;
 		try {
@@ -171,7 +180,7 @@ public class ChecksumFolder {
             final double percent = new Double(current / total).doubleValue();
             Platform.runLater(() -> percentComplete.set(percent));
             try {
-                Thread.sleep(100); 
+                Thread.sleep(1); 
             } catch(InterruptedException ex) {
                 Thread.currentThread().interrupt();
             }
