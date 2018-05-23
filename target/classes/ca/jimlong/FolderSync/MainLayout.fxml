@@ -18,6 +18,18 @@
                   <MenuItem fx:id="quitMenuItem" mnemonicParsing="false" text="Quit" />
             </items>
           </Menu>
+            <Menu fx:id="editMenu" mnemonicParsing="false" text="Edit">
+               <items>
+                  <MenuItem fx:id="selectAllMenuItem" mnemonicParsing="false" text="Select All" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="deleteFilesMenuItem" mnemonicParsing="false" text="Delete Files..." />
+                  <MenuItem fx:id="copyFilesMenuItem" mnemonicParsing="false" text="Copy Files..." />
+                  <MenuItem fx:id="showOnMapMenuItem" mnemonicParsing="false" text="Show Selected on Map..." />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="copyLocationToClipboardMenuItem" mnemonicParsing="false" text="Copy Location to Clipboard" />
+                  <MenuItem fx:id="copyFullFilenameToClipboardMenuItem" mnemonicParsing="false" text="Copy Full Filename to Clipboard" />
+               </items>
+            </Menu>
           <Menu fx:id="taskMenu" mnemonicParsing="false" text="Tasks">
             <items>
               <MenuItem fx:id="checksumSourceFolderMenuItem" mnemonicParsing="false" text="Checksum Source Folder..." />

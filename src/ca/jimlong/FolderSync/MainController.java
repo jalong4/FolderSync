@@ -42,6 +42,9 @@ public class MainController implements Initializable {
     private Menu fileMenu;
     
     @FXML
+    private Menu editMenu;
+    
+    @FXML
     private Menu taskMenu;
     
     @FXML
@@ -49,7 +52,10 @@ public class MainController implements Initializable {
     
     
     //  File MenuItems
-
+    
+    @FXML
+    private MenuItem selectAllMenuItem;
+    
     @FXML
     private MenuItem openSourceFolderMenuItem;
 
@@ -58,6 +64,22 @@ public class MainController implements Initializable {
     
     @FXML
     private MenuItem quitMenuItem;
+    
+    // Edit MenuItems
+    
+    @FXML
+    private MenuItem copyFilesMenuItem;
+    @FXML
+    private MenuItem deleteFilesMenuItem;
+
+    @FXML
+    private MenuItem showOnMapMenuItem;
+   
+    @FXML
+    private MenuItem copyLocationToClipboardMenuItem;
+    @FXML
+    private MenuItem copyFullFilenameToClipboardMenuItem;
+    
     
     // Task MenuItems
 
