@@ -2,6 +2,10 @@ package ca.jimlong.FolderSync;
 
 import java.io.File;
 import java.net.URL;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
 import ca.jimlong.FolderSync.Models.ChecksumFileProperties;
@@ -9,6 +13,7 @@ import ca.jimlong.FolderSync.Models.ChecksumFolder;
 import ca.jimlong.FolderSync.Models.CompareTwoFolders;
 import ca.jimlong.FolderSync.Models.Settings;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
@@ -103,7 +108,10 @@ public class MainController implements Initializable {
     
     @FXML
     private TableColumn<ChecksumFileProperties, String> locationCol;
-
+  
+    @FXML
+    private TableColumn<ChecksumFileProperties, Number> sequenceNumberCol;
+    
     @FXML
     private TableColumn<ChecksumFileProperties, String> nameCol;
 
@@ -131,6 +139,7 @@ public class MainController implements Initializable {
     }
     
     
+	@SuppressWarnings("unchecked")
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
 		System.out.println( "Launching Folder Sync Application..." );
@@ -157,8 +166,23 @@ public class MainController implements Initializable {
 		kindCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("kind"));
 		sizeCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("size"));
 		checksumCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("checksum"));	
-		locationCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("location"));	
-	
+		locationCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("location"));
+		sequenceNumberCol.setCellValueFactory(column-> new ReadOnlyObjectWrapper<Number>(tableView.getItems().indexOf(column.getValue()) + 1));
+		sequenceNumberCol.setSortable(false);
+		
+		
+		dateCreatedCol.setComparator((String s1, String s2) -> {
+			Instant i1 = LocalDateTime.parse(s1, DateTimeFormatter.ofPattern(ChecksumFileProperties.datePattern)).atZone(ZoneId.systemDefault()).toInstant();
+			Instant i2 = LocalDateTime.parse(s2, DateTimeFormatter.ofPattern(ChecksumFileProperties.datePattern)).atZone(ZoneId.systemDefault()).toInstant();
+			return i1.compareTo(i2);			
+		});
+		
+		sizeCol.setComparator((String s1, String s2) -> {
+			Long l1 = ChecksumFileProperties.formattedValues.get(s1);
+			Long l2 = ChecksumFileProperties.formattedValues.get(s2);
+			return l1.compareTo(l2);			
+		});
+		
 	}
 
 	private ImageView getFolderIcon() {
@@ -210,6 +234,8 @@ public class MainController implements Initializable {
 						System.out.println("Unknown folder: " + folder);
 					}
 				}
+				dateCreatedCol.setSortType(TableColumn.SortType.ASCENDING);
+				tableView.getSortOrder().add(dateCreatedCol);
 			}
 			
         });

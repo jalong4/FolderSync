@@ -6,7 +6,7 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.jimlong.FolderSync.MainController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ca.jimlong.FolderSync.MainController">
    <children>
       <MenuBar fx:id="menuBar" layoutX="14.0" layoutY="14.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <menus>
@@ -36,31 +36,32 @@
       <Group AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="40.0">
          <children>
             <Label layoutX="27.0" layoutY="46.0" prefHeight="35.0" prefWidth="118.0" text="Source Folder:" />
-            <Label fx:id="sourceFolderLabel" layoutX="177.0" layoutY="46.0" prefHeight="35.0" prefWidth="306.0" />
-            <ProgressBar fx:id="sourceProgressBar" layoutX="501.0" layoutY="54.0" prefWidth="200.0" progress="0.0" />
+            <Label fx:id="sourceFolderLabel" layoutX="177.0" layoutY="46.0" prefHeight="35.0" prefWidth="400.0" />
+            <ProgressBar fx:id="sourceProgressBar" layoutX="595.0" layoutY="54.0" prefWidth="106.0" progress="0.0" />
          </children>
       </Group>
       <Group layoutX="10.0" layoutY="10.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="80.0">
          <children>
-            <Label fx:id="sourceFolderLabel11" layoutX="27.0" layoutY="46.0" prefHeight="35.0" prefWidth="118.0" text="Destination Folder:" />
-            <Label fx:id="destinationFolderLabel" layoutX="177.0" layoutY="46.0" prefHeight="35.0" prefWidth="306.0" />
-            <ProgressBar fx:id="destinationProgressBar" layoutX="501.0" layoutY="54.0" prefWidth="200.0" progress="0.0" />
+            <Label layoutX="27.0" layoutY="46.0" prefHeight="35.0" prefWidth="118.0" text="Destination Folder:" />
+            <Label fx:id="destinationFolderLabel" layoutX="177.0" layoutY="46.0" prefHeight="35.0" prefWidth="400.0" />
+            <ProgressBar fx:id="destinationProgressBar" layoutX="595.0" layoutY="54.0" prefWidth="106.0" progress="0.0" />
          </children>
       </Group>
       <Group layoutX="3.0" layoutY="44.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="120.0">
          <children>
             <Label fx:id="sourceFolderLabel111" layoutX="27.0" layoutY="46.0" prefHeight="35.0" prefWidth="118.0" text="Compare Folders:" />
             <Label fx:id="CompareFoldersLabel" layoutX="177.0" layoutY="46.0" prefHeight="35.0" prefWidth="306.0" text="Source Folder vs Destination Folder" />
-            <ProgressBar fx:id="compareProgressBar" layoutX="501.0" layoutY="54.0" prefWidth="200.0" progress="0.0" />
+            <ProgressBar fx:id="compareProgressBar" layoutX="595.0" layoutY="54.0" prefWidth="106.0" progress="0.0" />
          </children>
       </Group>
-      <TreeView fx:id="treeView" layoutX="14.0" layoutY="157.0" prefHeight="412.0" prefWidth="230.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="180.0" />
-      <TableView fx:id="tableView" layoutX="254.0" layoutY="140.0" prefHeight="200.0" prefWidth="640.0" AnchorPane.leftAnchor="254.0" AnchorPane.rightAnchor="4.0" AnchorPane.topAnchor="180.0">
+      <TreeView fx:id="treeView" layoutX="14.0" layoutY="157.0" prefHeight="412.0" prefWidth="250.0" AnchorPane.bottomAnchor="8.0" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="180.0" />
+      <TableView fx:id="tableView" layoutX="254.0" layoutY="140.0" prefHeight="200.0" prefWidth="640.0" AnchorPane.leftAnchor="274.0" AnchorPane.rightAnchor="4.0" AnchorPane.topAnchor="180.0">
         <columns>
-          <TableColumn fx:id="nameCol" prefWidth="138.0" text="Name" />
-            <TableColumn fx:id="dateCreatedCol" prefWidth="156.0" text="Date Created" />
-            <TableColumn fx:id="kindCol" prefWidth="50.0" text="Kind" />
-            <TableColumn fx:id="sizeCol" prefWidth="48.0" style="-fx-alignment: CENTER-RIGHT;" text="Size" />
+            <TableColumn fx:id="sequenceNumberCol" prefWidth="50.0" style="-fx-alignment: TOP-RIGHT;" text="#" />
+          <TableColumn fx:id="nameCol" prefWidth="210.0" text="Name" />
+            <TableColumn fx:id="dateCreatedCol" prefWidth="158.0" text="Date Created" />
+            <TableColumn fx:id="kindCol" prefWidth="60.0" text="Kind" />
+            <TableColumn fx:id="sizeCol" prefWidth="58.0" style="-fx-alignment: TOP-RIGHT;" text="Size" />
             <TableColumn fx:id="checksumCol" minWidth="0.0" prefWidth="248.0" style="-fx-alignment: CENTER-LEFT;" text="Checksum" />
             <TableColumn fx:id="locationCol" minWidth="0.0" prefWidth="100.0" text="Location" />
         </columns>

@@ -28,6 +28,7 @@ import javafx.beans.property.SimpleStringProperty;
 public class ChecksumFileProperties {
 
 	public static Map<String, Long> formattedValues = new HashMap<String, Long>();
+	public static final String datePattern = "MMM dd, yyyy 'at' hh:mm a";
 	private File file;
 	private GeoLocation geoLocation;
 	private SimpleStringProperty name;
@@ -39,7 +40,8 @@ public class ChecksumFileProperties {
 	
 	public ChecksumFileProperties(String basePath, File file, String checksum) {
 
-		String name = new File(basePath).toURI().relativize(new File(file.getAbsolutePath()).toURI()).getPath();
+		// some filename's have an \r at the end eg. Icon files on Google photos
+		String name = new File(basePath).toURI().relativize(new File(file.getAbsolutePath()).toURI()).getPath().replaceAll("\\r","");
 		
 		Path p = Paths.get(file.getAbsolutePath());
 		BasicFileAttributes attr = null;
@@ -62,7 +64,6 @@ public class ChecksumFileProperties {
 	            	String exifDateCreated = (date == null) ? dateCreated : getFormattedDate(date);
 	            	
 	            	if (!dateCreated.equals(exifDateCreated)) {
-		            	System.out.print("Replacing date " + dateCreated + " from EXIF date with date " + exifDateCreated);
 		            	dateCreated = exifDateCreated;
 	            	}
 	            }
@@ -70,7 +71,6 @@ public class ChecksumFileProperties {
 				 // Read GPS Data
 	            GpsDirectory gpsDirectory = (GpsDirectory) metadata.getFirstDirectoryOfType(GpsDirectory.class);
 	            if (gpsDirectory != null) {
-	            	System.out.println("Found GSP data for file: " + file.getAbsolutePath());
 	            	geoLocation = gpsDirectory.getGeoLocation();
 	            }
 	            
@@ -82,7 +82,7 @@ public class ChecksumFileProperties {
 			e.printStackTrace();
 		}
 	    
-		String kind = FileUtils.getFileType(name);
+		String kind = FileUtils.getFileType(name).toUpperCase();
 		long size = file.length();
 		
 		this.file = file;
@@ -100,18 +100,14 @@ public class ChecksumFileProperties {
 	}
 	
 	private String getFormattedDate(FileTime date) {
-		SimpleDateFormat df = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a");
+		SimpleDateFormat df = new SimpleDateFormat(datePattern);
 		return df.format(date.toMillis());
 	}
 	
 	private String getFormattedDate(Date date) {
 		
 		LocalDateTime localDate = LocalDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC);
-		String datePattern = "MMM dd, yyyy 'at' hh:mm a";
 		DateTimeFormatter df = DateTimeFormatter.ofPattern(datePattern);
-		
-//		SimpleDateFormat udf = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a");
-//		System.out.println("formatting UTC date: " + udf.format(date) + " to local date: " + df.format(localDate));
 		return df.format(localDate);
 	}
 
@@ -145,17 +141,19 @@ public class ChecksumFileProperties {
 
 	private String formatSize(long size){
 		String returnValue;
-		if(size<= 0){
-			returnValue =  "0";}
 		
-		else if(size<1024){
+		if (size <= 0) {
+			returnValue = "0";
+		}
+		else if (size < 1024) {
 			returnValue = size + " B";
+		} else if (size < 1048576) {
+			returnValue = size / 1024 + " kB";
+		} else {
+			double sizeDouble= new Long(size).doubleValue();
+			returnValue = String.format("%.1f", sizeDouble / 1048576.0) + " MB";
 		}
-		else if(size < 1048576){
-			returnValue = size/1024 + " kB";
-		}else{
-			returnValue = size/1048576 + " MB";
-		}
+		
 		formattedValues.put(returnValue, size);
 		return returnValue;
 		

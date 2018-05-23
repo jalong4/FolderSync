@@ -5,8 +5,9 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
@@ -188,7 +189,36 @@ public class ChecksumFolder {
     	return values;
     	
     }
+    
+    private Set<String> symmetricDifference(Set<String> a, Set<String> b) {
+        Set<String> result = new HashSet<>(a);
+        for (String element : b) {
+            if (result.contains(element)) {
+                result.remove(element);
+            }
+        }
+        return result;
+    }
+    
+    private void updateProgressBar(DoubleProperty pb, final double percent) {
+        Platform.runLater(() -> pb.set(percent));
+        try {
+            Thread.sleep(100); 
+        } catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
 
+    private ObservableList<ChecksumFileProperties> createObservableListOfChecksumFileProperties(TreeMap<String, ChecksumFileProperties> map, List<String> list) {
+    	ObservableList<ChecksumFileProperties> results = FXCollections.observableArrayList();
+    	
+    	for (String key : list) {
+    		results.add(map.get(key));
+        }
+    	
+    	return results;
+    }
+    
     public CompareTwoFolders compare(ChecksumFolder other) {
 
         CompareTwoFolders compareTwoFolders = new CompareTwoFolders(this.folder, other.folder);
@@ -199,93 +229,25 @@ public class ChecksumFolder {
             return compareTwoFolders;
         }
 
-        Iterator<String> src = map.keySet().iterator();
-        Iterator<String> dest = other.map.keySet().iterator();
+        Set<String> src = new HashSet<>(map.keySet());
+        Set<String> dest = new HashSet<String>(other.map.keySet());
+        updateProgressBar(comparePercentComplete, 0.3);
+        
+        List<String> notInThis = new ArrayList<>(symmetricDifference(dest, src));
+        updateProgressBar(comparePercentComplete, 0.6);
+        
+        List<String> notInOther = new ArrayList<>(symmetricDifference(src, dest));
+        
+        List<String> matched = new ArrayList<>(src);
+        matched.retainAll(dest);
+        updateProgressBar(comparePercentComplete, 0.9);
+        
+        compareTwoFolders.notInThis = createObservableListOfChecksumFileProperties(other.map, notInThis);
+        compareTwoFolders.notInOther = createObservableListOfChecksumFileProperties(map, notInOther);
+        compareTwoFolders.matched = createObservableListOfChecksumFileProperties(map, matched);
 
-        String srcKey = null;
-        String destKey = null;
-
-        int total = this.map.size() + other.map.size();
-        double current = 0;
-	  
-        while (src.hasNext() && dest.hasNext()) {
-        	srcKey = src.next();
-        	destKey = dest.next();
-
-        	// System.out.println( "Src file: " + map.get(srcKey) + ", Dest file: " + other.map.get(destKey));
-        	int compareTo = srcKey.compareTo(destKey);
-
-        	if (compareTo == 0) {
-        		compareTwoFolders.matched.add(map.get(srcKey));
-        		srcKey = src.next();
-        		destKey = dest.next(); 
-        		current += 2;	            		
-        	} else if (compareTo < 0) {  // src < dest
-        		// System.out.println("Not in Dest -> Filename: " + map.get(srcKey) + " Checksum: " + srcKey);
-        		compareTwoFolders.notInOther.add(map.get(srcKey));
-        		srcKey = src.next();
-        		current++;
-        	} else {
-        		// System.out.println("Not in Src -> Filename: " + other.map.get(destKey) + " Checksum: " + destKey);
-        		compareTwoFolders.notInThis.add(other.map.get(destKey));
-        		destKey = dest.next(); 
-        		current++;	            		
-        	}
-
-        	final double percent = new Double(current / total).doubleValue();
-        	Platform.runLater(() -> comparePercentComplete.set(percent));
-        	try {
-        		Thread.sleep(100); 
-        	} catch(InterruptedException ex) {
-        		Thread.currentThread().interrupt();
-        	}
-        }
-
-    	if (srcKey.compareTo(destKey) == 0) {
-    		compareTwoFolders.matched.add(map.get(srcKey));
-    		current += 2;
-        	final double percent = new Double(current / total).doubleValue();
-        	Platform.runLater(() -> comparePercentComplete.set(percent));
-        	try {
-        		Thread.sleep(100); 
-        	} catch(InterruptedException ex) {
-        		Thread.currentThread().interrupt();
-        	}
-    	}
-
-
-        while (dest.hasNext()) {
-        	// System.out.println("Not in Src -> Filename: " + other.map.get(destKey) + " Checksum: " + destKey);
-        	compareTwoFolders.notInThis.add(other.map.get(destKey));
-        	destKey = dest.next();
-        	current++;
-
-        	final double percent = new Double(current / total).doubleValue();
-        	Platform.runLater(() -> comparePercentComplete.set(percent));
-        	try {
-        		Thread.sleep(100); 
-        	} catch(InterruptedException ex) {
-        		Thread.currentThread().interrupt();
-        	}
-        }
-	        
-
-        while (src.hasNext()) {
-            // System.out.println("Not in Dest -> Filename: " + map.get(srcKey) + " Checksum: " + srcKey);
-            compareTwoFolders.notInOther.add(map.get(srcKey));
-            srcKey = src.next();
-            current++;
-
-            final double percent = new Double(current / total).doubleValue();
-            Platform.runLater(() -> comparePercentComplete.set(percent));
-            try {
-                Thread.sleep(100); 
-            } catch(InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-
+        updateProgressBar(comparePercentComplete, 1.0);
+        
         return compareTwoFolders;
 
     }
