@@ -41,6 +41,11 @@ public class ChecksumFolder {
         this.checksumCompleted = false;
         this.cache = cache;
     }
+    
+	public File getFolder() {
+		return folder;
+	}
+
 
 
 	private byte[] createChecksum(String filename) throws Exception {

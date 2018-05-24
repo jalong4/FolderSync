@@ -8,11 +8,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 import ca.jimlong.FolderSync.Models.ChecksumCache;
 import ca.jimlong.FolderSync.Models.ChecksumFileProperties;
@@ -20,7 +16,6 @@ import ca.jimlong.FolderSync.Models.ChecksumFolder;
 import ca.jimlong.FolderSync.Models.CompareTwoFolders;
 import ca.jimlong.FolderSync.Models.Settings;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -265,6 +260,7 @@ public class MainController implements Initializable {
     			copyFullFilenameToClipboardMenuItem.setDisable(false);
     		} else if (folderName.startsWith(settings.constants.folderNames.skippedFiles)) {
     			deleteFilesMenuItem.setDisable(false);
+    			copyFullFilenameToClipboardMenuItem.setDisable(false);
     		} else if (folderName.startsWith(settings.constants.folderNames.notInOther)) {
     			copyFilesMenuItem.setDisable(false);
     			showOnMapMenuItem.setDisable(false);
@@ -291,6 +287,7 @@ public class MainController implements Initializable {
 		return folderIcon;
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void setTreeViewCallbacks() {
 		
 		treeView.setOnMouseClicked(e -> {
@@ -339,7 +336,7 @@ public class MainController implements Initializable {
 				}
 				tableView.setId(parentFolder + "/" + folder);
 				dateCreatedCol.setSortType(TableColumn.SortType.ASCENDING);
-				tableView.getSortOrder().add(dateCreatedCol);
+				tableView.getSortOrder().addAll(dateCreatedCol, nameCol);
 				tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 			}
 			
@@ -388,14 +385,23 @@ public class MainController implements Initializable {
 		});
 		
 		copyFilesMenuItem.setOnAction(e -> {
-			ObservableList<ChecksumFileProperties> selectedRows = tableView.getSelectionModel().getSelectedItems();
-			updateDetailsOnTreeView();
+			ObservableList<Integer> selectedIndices = tableView.getSelectionModel().getSelectedIndices();
+			ObservableList<ChecksumFileProperties> copied = FXCollections.observableArrayList();
 			
-			for (ChecksumFileProperties row : selectedRows) {
-				File file = row.getFile();
-				Path path = file.toPath();
-				System.out.println("Copying file: " + file.getAbsolutePath());
+			for (Integer index : selectedIndices) {
+				ChecksumFileProperties row = tableView.getItems().get(index.intValue());
+				if (copyFile(row, dest)) {
+					copied.add(row);
+				}
 			}
+			
+			performChecksumForDestFolder();
+			performCompareFolders();
+			
+	        Platform.runLater(() -> {
+	        	tableView.getItems().removeAll(copied);
+				updateDetailsOnTreeView();
+	        });
 		});
        
 		
@@ -462,6 +468,25 @@ public class MainController implements Initializable {
 	}
 
 
+	private boolean copyFile(ChecksumFileProperties checksumFilePropertiesFile, ChecksumFolder targetFolder) {
+
+		File file = checksumFilePropertiesFile.getFile();
+		String name = checksumFilePropertiesFile.getName();
+		
+		Path fromPath = file.toPath();
+		Path toPath = Paths.get(targetFolder.getFolder().getAbsolutePath(), name);
+		System.out.println("Copying file: " + file.getAbsolutePath() + " to " + toPath.toString());
+		
+		try {
+			Files.copy(fromPath, toPath, StandardCopyOption.COPY_ATTRIBUTES);
+			return true;
+		} catch (IOException e1) {
+			System.out.println("Warning: an IOException occurred while trying to copy file: " + file.getAbsolutePath() + " to path: " + toPath.toString());
+			return false;
+		}
+
+	}
+	
 	private boolean deleteFile(File file) {
 		Path path = file.toPath();
 		try {
@@ -506,34 +531,6 @@ public class MainController implements Initializable {
 		
 	}
 
-//	private void updateTableViewFolderCounts(ChecksumFolder folder, String folderName, TreeItem<String> item) {
-//		
-//		showFolderDetailsOnTreeView(folder, item);
-//		
-//		if (folderName.equals(settings.constants.folderNames.duplicateFiles)) {
-//			
-//		} else if (folderName.equals(settings.constants.folderNames.skippedFiles)) {
-//
-//		} else if (folderName.equals(settings.constants.folderNames.uniqueFiles)) {
-//
-//		}
-//		
-//	}
-//	
-//	private void updateTableViewComparisonResultsCounts(String folderName) {
-//		TreeItem<String> item = treeView.getTreeItem(2);
-//		
-//		if (folderName.equals(settings.constants.folderNames.notInOther)) {
-//			
-//		} else if (folderName.equals(settings.constants.folderNames.notInThis)) {
-//
-//		} else if (folderName.equals(settings.constants.folderNames.matched)) {
-//
-//		}
-//		
-//	}
-
-
 
 	private void performChecksumForDestFolder() {
 		File folder = new File(settings.getDestFolder());
@@ -545,14 +542,15 @@ public class MainController implements Initializable {
 		destinationProgressBar.progressProperty().bind(dest.percentComplete);
 		destinationProgressBar.setVisible(true);
 
+        dest.generateChecksumMapForFolder();
+    	cache.update(dest);
+    	boolean disabled = src == null ? true : !src.isChecksumCompleted();
+        if (!disabled) {
+        	cache.rewrite();
+        }
+        
 		new Thread() {
 		    public void run() {
-		        dest.generateChecksumMapForFolder();
-	        	cache.update(dest);
-	        	boolean disabled = src == null ? true : !src.isChecksumCompleted();
-	            if (!disabled) {
-	            	cache.rewrite();
-	            }
 		        Platform.runLater(() -> {
 		            compareFoldersMenuItem.setDisable(disabled);
 		            showFolderDetailsOnTreeView(dest, destinationFolderTreeItem);

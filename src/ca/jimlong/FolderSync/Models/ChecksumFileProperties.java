@@ -38,11 +38,11 @@ public class ChecksumFileProperties {
 	private SimpleStringProperty checksum;
 	private SimpleStringProperty location;
 	
-	public ChecksumFileProperties(String basePath, File file, String checksum) {
-
+	public ChecksumFileProperties(String basePath, File file, String checksum) {		
 		// some filename's have an \r at the end eg. Icon files on Google photos
-		String name = new File(basePath).toURI().relativize(new File(file.getAbsolutePath()).toURI()).getPath().replaceAll("\\r","");
 		
+		String name = new File(basePath).toURI().relativize(new File(file.getAbsolutePath()).toURI()).getPath().replaceAll("\\r","");
+
 		Path p = Paths.get(file.getAbsolutePath());
 		BasicFileAttributes attr = null;
 		String dateCreated = "";
