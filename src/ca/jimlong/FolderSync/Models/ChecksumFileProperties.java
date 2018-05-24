@@ -56,30 +56,32 @@ public class ChecksumFileProperties {
 		    // Use date created from EXIF metadata if it exists
 			if (checksum.length() > 0) {
 				Metadata metadata = ImageMetadataReader.readMetadata(file);
-				
-				 // Read Exif Data
-	            Directory directory = metadata.getFirstDirectoryOfType( ExifDirectoryBase.class );
-	            if (directory != null) {
-	            	Date date = directory.getDate( ExifDirectoryBase.TAG_DATETIME );
-	            	String exifDateCreated = (date == null) ? dateCreated : getFormattedDate(date);
-	            	
-	            	if (!dateCreated.equals(exifDateCreated)) {
-		            	dateCreated = exifDateCreated;
-	            	}
-	            }
-	            
-				 // Read GPS Data
-	            GpsDirectory gpsDirectory = (GpsDirectory) metadata.getFirstDirectoryOfType(GpsDirectory.class);
-	            if (gpsDirectory != null) {
-	            	geoLocation = gpsDirectory.getGeoLocation();
-	            }
-	            
+
+				// Read Exif Data
+				Directory directory = metadata.getFirstDirectoryOfType( ExifDirectoryBase.class );
+				if (directory != null) {
+					Date date = directory.getDate( ExifDirectoryBase.TAG_DATETIME );
+					String exifDateCreated = (date == null) ? dateCreated : getFormattedDate(date);
+
+					if (!dateCreated.equals(exifDateCreated)) {
+						dateCreated = exifDateCreated;
+					}
+				}
+
+				// Read GPS Data
+				GpsDirectory gpsDirectory = (GpsDirectory) metadata.getFirstDirectoryOfType(GpsDirectory.class);
+				if (gpsDirectory != null) {
+					geoLocation = gpsDirectory.getGeoLocation();
+				}
 			}
 
+
 		} catch (ImageProcessingException e1) {
-			e1.printStackTrace();
+			System.out.println("Warning: an ImageProcessingException occurred while trying to get metadata for file: " + file.getAbsolutePath());
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Warning: an IOException occurred while trying to get metadata for file: " + file.getAbsolutePath());
+		} catch (NullPointerException e) {
+			System.out.println("Warning: a NullPointerException occurred while trying to get metadata for file: " + file.getAbsolutePath());
 		}
 	    
 		String kind = FileUtils.getFileType(name).toUpperCase();

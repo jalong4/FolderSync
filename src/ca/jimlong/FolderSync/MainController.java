@@ -8,7 +8,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import ca.jimlong.FolderSync.Models.ChecksumCache;
 import ca.jimlong.FolderSync.Models.ChecksumFileProperties;
@@ -17,6 +21,7 @@ import ca.jimlong.FolderSync.Models.CompareTwoFolders;
 import ca.jimlong.FolderSync.Models.Settings;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -295,41 +300,24 @@ public class MainController implements Initializable {
 		});
 		
 		deleteFilesMenuItem.setOnAction(e -> {
-			ObservableList<ChecksumFileProperties> selectedRows = tableView.getSelectionModel().getSelectedItems();
-			for (ChecksumFileProperties row : selectedRows) {
-				File file = row.getFile();
-				Path path = file.toPath();
-				try {
-					Files.delete(path);
-					System.out.println("Successfully deleted: " + file.getAbsolutePath());
-				} catch (DirectoryNotEmptyException error) {
-					System.out.println("Failed to deleted: " + file.getAbsolutePath());
-					error.printStackTrace();
-				} catch (IOException error) {
-					System.out.println("Failed to deleted: " + file.getAbsolutePath());
-					error.printStackTrace();
-				} catch (SecurityException error) {
-					System.out.println("Failed to deleted: " + file.getAbsolutePath());
-					error.printStackTrace();
+			ObservableList<Integer> selectedIndices = tableView.getSelectionModel().getSelectedIndices();
+			ObservableList<ChecksumFileProperties> deleted = FXCollections.observableArrayList();
+			
+			for (Integer index : selectedIndices) {
+				ChecksumFileProperties row = tableView.getItems().get(index.intValue());
+				if (deleteFile(row.getFile())) {
+					deleted.add(row);
 				}
 			}
+			
+	        Platform.runLater(() -> tableView.getItems().removeAll(deleted));
+
 		});
 		
 		copyFilesMenuItem.setOnAction(e -> {
 			ObservableList<ChecksumFileProperties> selectedRows = tableView.getSelectionModel().getSelectedItems();
-			String[] tags = tableView.getId().split("\\/");
-			if (tags.length != 2) {
-				System.out.println("Invalid tags length: " + tags.length);
-				for (String tag : tags) {
-					System.out.println(tag);
-				}
-				return;
-			}
+			processTableViewTags();
 			
-			String parentFolder = tags[0];
-			String folder = tags[1];
-			
-			System.out.println("Parent Folder: " + parentFolder + "\nFolder: " + folder);
 			for (ChecksumFileProperties row : selectedRows) {
 				File file = row.getFile();
 				Path path = file.toPath();
@@ -399,6 +387,44 @@ public class MainController implements Initializable {
         });
         
 	}
+
+
+	private boolean deleteFile(File file) {
+		Path path = file.toPath();
+		try {
+			Files.delete(path);
+			System.out.println("Successfully deleted: " + file.getAbsolutePath());
+			return true;
+		} catch (DirectoryNotEmptyException error) {
+			System.out.println("Failed to deleted: " + file.getAbsolutePath());
+			error.printStackTrace();
+			return false;
+		} catch (IOException error) {
+			System.out.println("Failed to deleted: " + file.getAbsolutePath());
+			error.printStackTrace();
+			return false;
+		} catch (SecurityException error) {
+			System.out.println("Failed to deleted: " + file.getAbsolutePath());
+			error.printStackTrace();
+			return false;
+		}
+	}
+
+	private void processTableViewTags() {
+		
+		String[] tags = tableView.getId().split("\\/");
+		if (tags.length != 2) {
+			return;
+		}
+		
+		
+		String parentFolder = tags[0];
+		String folder = tags[1];
+		
+		
+		
+	}
+
 
 	private void performChecksumForDestFolder() {
 		File folder = new File(settings.getDestFolder());
