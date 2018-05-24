@@ -475,9 +475,16 @@ public class MainController implements Initializable {
 		
 		Path fromPath = file.toPath();
 		Path toPath = Paths.get(targetFolder.getFolder().getAbsolutePath(), name);
+
+		// create all non existing sub folders
+		Path parent = toPath.getParent();
+
 		System.out.println("Copying file: " + file.getAbsolutePath() + " to " + toPath.toString());
 		
 		try {
+			if (Files.notExists(parent) ) {
+				Files.createDirectories(parent);
+			}
 			Files.copy(fromPath, toPath, StandardCopyOption.COPY_ATTRIBUTES);
 			return true;
 		} catch (IOException e1) {
