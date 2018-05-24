@@ -20,6 +20,7 @@ import ca.jimlong.FolderSync.Models.ChecksumFolder;
 import ca.jimlong.FolderSync.Models.CompareTwoFolders;
 import ca.jimlong.FolderSync.Models.Settings;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -163,6 +164,7 @@ public class MainController implements Initializable {
     private ChecksumFolder src;
     private ChecksumFolder dest;
     private ChecksumCache cache;
+
     
 	private CompareTwoFolders compareTwoFolders;
     private Settings settings;
@@ -216,6 +218,69 @@ public class MainController implements Initializable {
 			return l1.compareTo(l2);			
 		});
 		
+		selectAllMenuItem.setDisable(true);
+		deleteFilesMenuItem.setDisable(true);
+		copyFilesMenuItem.setDisable(true);
+		showOnMapMenuItem.setDisable(true);
+		copyLocationToClipboardMenuItem.setDisable(true);
+		copyFullFilenameToClipboardMenuItem.setDisable(true);
+		
+		tableView.getSelectionModel().selectedItemProperty().addListener((observer, oldSelection, newSelection) -> {
+			System.out.println("selectedItem Property changed from: " + oldSelection + " to " + newSelection);
+			updateEditMenuItems();
+		});
+		
+		tableView.idProperty().addListener((observable, oldValue, newValue) -> {
+            System.out.println("Id Property changed from: " + oldValue + " to " + newValue);
+            updateEditMenuItems();
+        });
+		
+	}
+	
+	private void updateEditMenuItems() {
+		
+		String[] tags = tableView.getId().split("\\/");
+		
+		selectAllMenuItem.setDisable(true);
+		deleteFilesMenuItem.setDisable(true);
+		copyFilesMenuItem.setDisable(true);
+		showOnMapMenuItem.setDisable(true);
+		copyLocationToClipboardMenuItem.setDisable(true);
+		copyFullFilenameToClipboardMenuItem.setDisable(true);
+		
+		if (tags.length != 2 || tags[1].equals(settings.constants.folderNames.rootFolder)
+				|| tableView.getItems().isEmpty()) {
+			return;
+		}		
+		
+		selectAllMenuItem.setDisable(false);
+		
+		if (tableView.getSelectionModel().getSelectedIndices().size() > 0) {
+    		String folderName = tags[1];
+    		if (folderName.startsWith(settings.constants.folderNames.duplicateFiles)) {
+    			deleteFilesMenuItem.setDisable(false);
+    		} else if (folderName.startsWith(settings.constants.folderNames.uniqueFiles)) {
+    			showOnMapMenuItem.setDisable(false);
+    			copyLocationToClipboardMenuItem.setDisable(false);
+    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    		} else if (folderName.startsWith(settings.constants.folderNames.skippedFiles)) {
+    			deleteFilesMenuItem.setDisable(false);
+    		} else if (folderName.startsWith(settings.constants.folderNames.notInOther)) {
+    			copyFilesMenuItem.setDisable(false);
+    			showOnMapMenuItem.setDisable(false);
+    			copyLocationToClipboardMenuItem.setDisable(false);
+    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    		} else if (folderName.startsWith(settings.constants.folderNames.notInThis)) {
+    			showOnMapMenuItem.setDisable(false);
+    			copyLocationToClipboardMenuItem.setDisable(false);
+    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    		} else if (folderName.startsWith(settings.constants.folderNames.matched)) {
+    			showOnMapMenuItem.setDisable(false);
+    			copyLocationToClipboardMenuItem.setDisable(false);
+    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    		}
+		}
+		
 	}
 
 	private ImageView getFolderIcon() {
@@ -232,6 +297,11 @@ public class MainController implements Initializable {
 //			if (e.getClickCount() == 2) {
 			
 			TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
+			
+			if (item == null) {
+				return;
+			}
+			
 			String folder = item.getValue();
 			String parentFolder = item.getParent() == null ? "(No Parent)" : item.getParent().getValue();
 
@@ -310,13 +380,16 @@ public class MainController implements Initializable {
 				}
 			}
 			
-	        Platform.runLater(() -> tableView.getItems().removeAll(deleted));
+	        Platform.runLater(() -> {
+	        	tableView.getItems().removeAll(deleted);
+				updateDetailsOnTreeView();
+	        });
 
 		});
 		
 		copyFilesMenuItem.setOnAction(e -> {
 			ObservableList<ChecksumFileProperties> selectedRows = tableView.getSelectionModel().getSelectedItems();
-			processTableViewTags();
+			updateDetailsOnTreeView();
 			
 			for (ChecksumFileProperties row : selectedRows) {
 				File file = row.getFile();
@@ -410,20 +483,56 @@ public class MainController implements Initializable {
 		}
 	}
 
-	private void processTableViewTags() {
+	private void updateDetailsOnTreeView() {
 		
 		String[] tags = tableView.getId().split("\\/");
 		if (tags.length != 2) {
 			return;
 		}
 		
+		String parentFolderName = tags[0];
+//		String folderName = tags[1];
 		
-		String parentFolder = tags[0];
-		String folder = tags[1];
-		
-		
+		if (parentFolderName.equals(settings.constants.folderNames.srcFolder)) {
+            sourceFolderTreeItem.getChildren().clear();
+			showFolderDetailsOnTreeView(src, sourceFolderTreeItem);
+		} else if (parentFolderName.equals(settings.constants.folderNames.destFolder)) {
+			destinationFolderTreeItem.getChildren().clear();
+			showFolderDetailsOnTreeView(dest, destinationFolderTreeItem);
+		} else if (parentFolderName.equals(settings.constants.folderNames.comparisonResults)) {
+			comparisionResultsTreeItem.getChildren().clear();
+			showFolderComparisonDetailsOnTreeView();
+		}
 		
 	}
+
+//	private void updateTableViewFolderCounts(ChecksumFolder folder, String folderName, TreeItem<String> item) {
+//		
+//		showFolderDetailsOnTreeView(folder, item);
+//		
+//		if (folderName.equals(settings.constants.folderNames.duplicateFiles)) {
+//			
+//		} else if (folderName.equals(settings.constants.folderNames.skippedFiles)) {
+//
+//		} else if (folderName.equals(settings.constants.folderNames.uniqueFiles)) {
+//
+//		}
+//		
+//	}
+//	
+//	private void updateTableViewComparisonResultsCounts(String folderName) {
+//		TreeItem<String> item = treeView.getTreeItem(2);
+//		
+//		if (folderName.equals(settings.constants.folderNames.notInOther)) {
+//			
+//		} else if (folderName.equals(settings.constants.folderNames.notInThis)) {
+//
+//		} else if (folderName.equals(settings.constants.folderNames.matched)) {
+//
+//		}
+//		
+//	}
+
 
 
 	private void performChecksumForDestFolder() {
