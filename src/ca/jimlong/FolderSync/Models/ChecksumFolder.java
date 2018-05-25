@@ -122,7 +122,6 @@ public class ChecksumFolder {
                 String filetype = FileUtils.getFileType(filename);
 
                 if (!validFiletypes.contains(filetype)) {
-                    System.out.println("Skipping: " + filename);
                     skippedFiles.add(new ChecksumFileProperties(this.folder.getAbsolutePath(), fileEntry, ""));
                     continue;
                 }
@@ -152,7 +151,6 @@ public class ChecksumFolder {
 
                 String path = fileEntry.getAbsolutePath();
                 String checksum = getMD5Checksum(path);
-                // System.out.println("Filename: " + filename + " Checksum: " + checksum);
                 if (map.containsKey(checksum)) {
                 	ChecksumFileProperties originalChecksumFile = map.get(checksum);
                 	File originalFile = originalChecksumFile.getFile();
@@ -160,7 +158,7 @@ public class ChecksumFolder {
                 	System.out.println("orig getParent " + originalFile.getParent());
                 	System.out.println("orig getPath " + originalFile.getPath());
                 	
-                    System.out.println("Filename: " + path + " is a Duplicate of: " + map.get(checksum) + " Checksum: "
+                    System.out.println("Filename: " + path + " is a Duplicate of: " + map.get(checksum).getName() + " Checksum: "
                             + checksum);
                     
                     if (originalFile.getParent().equals(fileEntry.getParent())) {

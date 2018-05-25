@@ -1,0 +1,16 @@
+ca/jimlong/FolderSync/Models/Settings.class
+ca/jimlong/FolderSync/Models/Settings$Constants.class
+ca/jimlong/FolderSync/MainController$3.class
+ca/jimlong/FolderSync/App.class
+ca/jimlong/FolderSync/MainController$2.class
+ca/jimlong/FolderSync/Models/ChecksumFolder.class
+ca/jimlong/FolderSync/MainController$1.class
+ca/jimlong/FolderSync/Models/CompareTwoFolders.class
+ca/jimlong/FolderSync/Utils/FileUtils.class
+ca/jimlong/FolderSync/Models/ChecksumCache.class
+ca/jimlong/FolderSync/Models/ChecksumCache$Cache.class
+ca/jimlong/FolderSync/MainController.class
+ca/jimlong/FolderSync/Models/GoogleAPI.class
+ca/jimlong/FolderSync/Models/ChecksumFileProperties.class
+ca/jimlong/FolderSync/Models/Settings$Constants$FolderNames.class
+ca/jimlong/FolderSync/Models/ChecksumCache$1.class

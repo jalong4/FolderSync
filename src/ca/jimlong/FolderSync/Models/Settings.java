@@ -59,7 +59,7 @@ public class Settings {
 	public Settings(File settingsFile) {
          
         if (!settingsFile.exists()) {
-            System.out.println("Missing Settings.json file, exitting...");
+        	System.out.println("Missing " + settingsFile.getName()  + " file, exitting...");
             return;
         }
          

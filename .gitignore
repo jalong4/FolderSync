@@ -6,6 +6,8 @@
 
 .cache.json
 
+secureSettings.json
+
 # Package Files #
 *.jar
 *.war

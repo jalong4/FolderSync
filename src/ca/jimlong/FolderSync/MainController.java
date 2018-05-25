@@ -10,17 +10,28 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
+import javax.imageio.ImageIO;
+
+import com.google.gson.Gson;
+
 import ca.jimlong.FolderSync.Models.ChecksumCache;
 import ca.jimlong.FolderSync.Models.ChecksumFileProperties;
 import ca.jimlong.FolderSync.Models.ChecksumFolder;
 import ca.jimlong.FolderSync.Models.CompareTwoFolders;
+import ca.jimlong.FolderSync.Models.GoogleAPI;
+import ca.jimlong.FolderSync.Models.GoogleGeoCodeAPI;
+import ca.jimlong.FolderSync.Models.GoogleGeoCodeResponse;
 import ca.jimlong.FolderSync.Models.Settings;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -28,6 +39,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -37,6 +49,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import okhttp3.HttpUrl;
 
 public class MainController implements Initializable {
 	
@@ -149,17 +162,61 @@ public class MainController implements Initializable {
     @FXML
     private TableColumn<ChecksumFileProperties, String> dateCreatedCol;
 
+   
+    @FXML
+    private Label imageFilenameTitleLabelLeft;  
+    @FXML
+    private Label imageFilenameLabelLeft; 
+    @FXML
+    private ImageView imageViewLeft;
+    @FXML
+    private Label imageSizeTitleLabelLeft;
+    @FXML
+    private Label imageSizeLabelLeft;
+    @FXML
+    private Label imageAddressTitleLabelLeft;
+    @FXML
+    private Label imageAddressLabelLeft; 
     
     @FXML
-    private ImageView imageView;
+    private Button rotateImageLeftButton;
+
+    @FXML
+    void onRotateImageLeftButtonClicked(ActionEvent event) {
+    	imageLeftRotation = (imageLeftRotation + 90) % 360;
+        imageViewLeft.setRotate(imageLeftRotation);
+    }
+    
+    @FXML
+    void onRotateImageRightButtonClicked(ActionEvent event) {
+    	imageRightRotation = (imageRightRotation + 90) % 360;
+        imageViewRight.setRotate(imageRightRotation);
+    }
+    
+
+    @FXML
+    private Label imageFilenameTitleLabelRight;
+    @FXML
+    private Label imageFilenameLabelRight;  
+    @FXML
+    private ImageView imageViewRight;
+    @FXML
+    private Label imageSizeTitleLabelRight;
+    @FXML
+    private Label imageSizeLabelRight;
+    
+    @FXML
+    private Button rotateImageRightButton;
     
 
     private final static String settingsFile = "settings.json";
+    private final static String googleAPIFile = "googleAPI.json";
     private Stage window;
     private ChecksumFolder src;
     private ChecksumFolder dest;
     private ChecksumCache cache;
-
+    private Integer imageLeftRotation;
+    private Integer imageRightRotation;
     
 	private CompareTwoFolders compareTwoFolders;
     private Settings settings;
@@ -183,6 +240,8 @@ public class MainController implements Initializable {
         
         File file = new File(getClass().getResource(settingsFile).getFile());
         settings = new Settings(file);
+        GoogleAPI googleAPI = new GoogleAPI( new File(getClass().getResource(googleAPIFile).getFile()));
+        
         cache = new ChecksumCache(settings.getCacheFile());
         
 		sourceFolderLabel.setText(settings.getSrcFolder());
@@ -221,20 +280,85 @@ public class MainController implements Initializable {
 		copyFullFilenameToClipboardMenuItem.setDisable(true);
 		
 		tableView.getSelectionModel().selectedItemProperty().addListener((observer, oldSelection, newSelection) -> {
-			System.out.println("selectedItem Property changed from: " + oldSelection + " to " + newSelection);
 			updateEditMenuItems();
 		});
 		
 		tableView.idProperty().addListener((observable, oldValue, newValue) -> {
-            System.out.println("Id Property changed from: " + oldValue + " to " + newValue);
             updateEditMenuItems();
         });
 		
+		tableView.setRowFactory(tv -> {
+		    TableRow<ChecksumFileProperties> row = new TableRow<>();
+		    row.setOnMouseClicked(event -> {
+		        if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY 
+		             && event.getClickCount() == 2) {
+
+		        	ChecksumFileProperties clickedRow = row.getItem();
+		            Image image = new Image(clickedRow.getFile().toURI().toString());
+		            imageFilenameLabelLeft.setText(clickedRow.getFile().getAbsolutePath());
+		            imageSizeLabelLeft.setText(clickedRow.getSize());
+		            imageViewLeft.setImage(image);
+		            imageLeftRotation = new Integer(0);
+		            ;
+		            setLeftImageViewComponentsVisible(true);
+		            
+		            GoogleGeoCodeResponse geo = GoogleGeoCodeAPI.getGeoCodeForCoordinates(googleAPI.getBaseUrl(), googleAPI.getKey(), clickedRow.getGeoLocation());
+		            
+//		            System.out.println(new Gson().toJson(geo));
+		            
+		            if (geo.results.length > 0) {
+		            	imageAddressLabelLeft.setText(geo.results[0].formatted_address);
+		            }
+
+//		            Image image2 = new Image(url.toString());
+//		            imageFilenameLabelRight.setText(latLong);
+//		            imageSizeLabelRight.setText(clickedRow.getSize());
+//		            imageViewRight.setImage(image2);
+//		            imageRightRotation = new Integer(0);
+//		            setRightImageViewComponentsVisible(true);
+		        }
+		    });
+		    return row ;
+		});
+		
+	    setImageViewComponentsVisible(false);
+	    
+		rotateImageLeftButton.setGraphic(new FontAwesomeIconView(FontAwesomeIcon.ROTATE_RIGHT));
+		rotateImageRightButton.setGraphic(new FontAwesomeIconView(FontAwesomeIcon.ROTATE_RIGHT));
+		
+	}
+
+
+	private void setImageViewComponentsVisible(boolean visible) {
+	    setLeftImageViewComponentsVisible(visible);
+	    setRightImageViewComponentsVisible(visible);
+	}
+
+	private void setLeftImageViewComponentsVisible(boolean visible) {
+		imageFilenameTitleLabelLeft.setVisible(visible); 
+	    imageFilenameLabelLeft.setVisible(visible);   
+	    imageViewLeft.setVisible(visible);
+	    imageSizeTitleLabelLeft.setVisible(visible); 
+	    imageSizeLabelLeft.setVisible(visible); 
+	    imageAddressTitleLabelLeft.setVisible(visible); 
+	    imageAddressLabelLeft.setVisible(visible); 
+	    rotateImageLeftButton.setVisible(visible);
+	}
+	
+	private void setRightImageViewComponentsVisible(boolean visible) {
+		imageFilenameTitleLabelRight.setVisible(visible);  
+	    imageFilenameLabelRight.setVisible(visible);   
+	    imageViewRight.setVisible(visible);
+	    imageSizeTitleLabelRight.setVisible(visible); 
+	    imageSizeLabelRight.setVisible(visible); 
+	    rotateImageRightButton.setVisible(visible);
 	}
 	
 	private void updateEditMenuItems() {
 		
 		String[] tags = tableView.getId().split("\\/");
+		
+		setImageViewComponentsVisible(false);
 		
 		selectAllMenuItem.setDisable(true);
 		deleteFilesMenuItem.setDisable(true);
@@ -287,12 +411,40 @@ public class MainController implements Initializable {
 		return folderIcon;
 	}
 	
+	private ImageView centerImage(Image img) {
+		ImageView imageView = new ImageView();
+		
+        imageView.setImage(img);
+        if (img != null) {
+            double w = 0;
+            double h = 0;
+
+            double ratioX = imageView.getFitWidth() / img.getWidth();
+            double ratioY = imageView.getFitHeight() / img.getHeight();
+
+            double reducCoeff = 0;
+            if(ratioX >= ratioY) {
+                reducCoeff = ratioY;
+            } else {
+                reducCoeff = ratioX;
+            }
+
+            w = img.getWidth() * reducCoeff;
+            h = img.getHeight() * reducCoeff;
+
+            imageView.setX((imageView.getFitWidth() - w) / 2);
+            imageView.setY((imageView.getFitHeight() - h) / 2);
+
+        }
+        
+        return imageView;
+    }
+	
+	
 	@SuppressWarnings("unchecked")
 	private void setTreeViewCallbacks() {
 		
-		treeView.setOnMouseClicked(e -> {
-//			if (e.getClickCount() == 2) {
-			
+		treeView.setOnMouseClicked(e -> {			
 			TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
 			
 			if (item == null) {
@@ -395,6 +547,8 @@ public class MainController implements Initializable {
 				}
 			}
 			
+			System.out.println("Copied " + Integer.toString(copied.size()) + " files out of " + Integer.toString(tableView.getItems().size()));
+			
 			performChecksumForDestFolder();
 			performCompareFolders();
 			
@@ -479,13 +633,14 @@ public class MainController implements Initializable {
 		// create all non existing sub folders
 		Path parent = toPath.getParent();
 
-		System.out.println("Copying file: " + file.getAbsolutePath() + " to " + toPath.toString());
+
 		
 		try {
 			if (Files.notExists(parent) ) {
 				Files.createDirectories(parent);
 			}
 			Files.copy(fromPath, toPath, StandardCopyOption.COPY_ATTRIBUTES);
+			System.out.println("Copied file: " + file.getAbsolutePath() + " to " + toPath.toString());
 			return true;
 		} catch (IOException e1) {
 			System.out.println("Warning: an IOException occurred while trying to copy file: " + file.getAbsolutePath() + " to path: " + toPath.toString());
