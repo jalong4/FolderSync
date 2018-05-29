@@ -10,10 +10,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
-import javax.imageio.ImageIO;
-
-import com.google.gson.Gson;
-
 import ca.jimlong.FolderSync.Models.ChecksumCache;
 import ca.jimlong.FolderSync.Models.ChecksumFileProperties;
 import ca.jimlong.FolderSync.Models.ChecksumFolder;
@@ -22,6 +18,7 @@ import ca.jimlong.FolderSync.Models.GoogleAPI;
 import ca.jimlong.FolderSync.Models.GoogleGeoCodeAPI;
 import ca.jimlong.FolderSync.Models.GoogleGeoCodeResponse;
 import ca.jimlong.FolderSync.Models.Settings;
+import ca.jimlong.FolderSync.Utils.FileUtils;
 import ca.jimlong.FolderSync.Utils.Utils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
@@ -73,9 +70,6 @@ public class MainController implements Initializable {
     //  File MenuItems
     
     @FXML
-    private MenuItem selectAllMenuItem;
-    
-    @FXML
     private MenuItem setSourceFolderMenuItem;
 
     @FXML
@@ -88,11 +82,19 @@ public class MainController implements Initializable {
     private MenuItem quitMenuItem;
     
     // Edit MenuItems
+   
+    @FXML
+    private MenuItem selectAllMenuItem;
     
+    @FXML
+    private MenuItem deleteFilesMenuItem;
     @FXML
     private MenuItem copyFilesMenuItem;
     @FXML
-    private MenuItem deleteFilesMenuItem;
+    private MenuItem overwriteFileMenuItem;
+    @FXML
+    private MenuItem copyAndKeepOriginalFileMenuItem;
+
 
     @FXML
     private MenuItem showOnMapMenuItem;
@@ -182,7 +184,11 @@ public class MainController implements Initializable {
     @FXML
     private Label imageAddressTitleLabelLeft;
     @FXML
-    private Label imageAddressLabelLeft; 
+    private Label imageAddressLabelLeft;  
+    @FXML
+    private Label imageOrientationTitleLabelLeft;
+    @FXML
+    private Label imageOrientationLabelLeft; 
     
     @FXML
     private Button rotateImageLeftButton;
@@ -213,7 +219,11 @@ public class MainController implements Initializable {
     @FXML
     private Label imageAddressTitleLabelRight;
     @FXML
-    private Label imageAddressLabelRight;    
+    private Label imageAddressLabelRight;
+    @FXML
+    private Label imageOrientationTitleLabelRight;
+    @FXML
+    private Label imageOrientationLabelRight;
     @FXML
     private Button rotateImageRightButton;
     
@@ -285,6 +295,8 @@ public class MainController implements Initializable {
 		selectAllMenuItem.setDisable(true);
 		deleteFilesMenuItem.setDisable(true);
 		copyFilesMenuItem.setDisable(true);
+		overwriteFileMenuItem.setDisable(true);
+		copyAndKeepOriginalFileMenuItem.setDisable(true);
 		showOnMapMenuItem.setDisable(true);
 		copyLocationToClipboardMenuItem.setDisable(true);
 		copyFullFilenameToClipboardMenuItem.setDisable(true);
@@ -312,8 +324,6 @@ public class MainController implements Initializable {
 		            
 		            imageLeftRotation = clickedRow.getRotation();
 		            imageViewLeft.setRotate(imageLeftRotation);
-		            System.out.println("TAG_ORIENTATION for file: " + file.getAbsolutePath() + ": " + clickedRow.getOrientation());
-		            System.out.println("Rotation for file: " + file.getAbsolutePath() + ": " + imageLeftRotation.intValue());
 
 		            setLeftImageViewComponentsVisible(true);
 		            
@@ -327,6 +337,16 @@ public class MainController implements Initializable {
 		            } else {
 		            	imageAddressTitleLabelLeft.setVisible(false);
 		            }
+		            
+		    	    imageOrientationTitleLabelLeft.setVisible(false);
+		    	    imageOrientationLabelLeft.setVisible(false);
+		    	    imageOrientationLabelLeft.setText("");
+		    	    if (clickedRow.getOrientation() != 1) {
+		    		    imageOrientationLabelLeft.setText(String.valueOf(clickedRow.getOrientation()));
+		    		    imageOrientationTitleLabelLeft.setVisible(true);
+		    		    imageOrientationLabelLeft.setVisible(true);
+		    	    }
+		            
 		            updateRightImageView(clickedRow);
 		        }
 		    });
@@ -358,6 +378,8 @@ public class MainController implements Initializable {
 	    imageSizeLabelLeft.setVisible(visible); 
 	    imageAddressTitleLabelLeft.setVisible(visible); 
 	    imageAddressLabelLeft.setVisible(visible); 
+	    imageOrientationTitleLabelLeft.setVisible(visible);
+	    imageOrientationLabelLeft.setVisible(visible);
 	    rotateImageLeftButton.setVisible(visible);
 	}
 	
@@ -369,6 +391,8 @@ public class MainController implements Initializable {
 	    imageSizeLabelRight.setVisible(visible); 
 	    imageAddressTitleLabelRight.setVisible(visible); 
 	    imageAddressLabelRight.setVisible(visible); 
+	    imageOrientationTitleLabelRight.setVisible(visible);
+	    imageOrientationLabelRight.setVisible(visible);
 	    rotateImageRightButton.setVisible(visible);
 	}
 	
@@ -381,6 +405,8 @@ public class MainController implements Initializable {
 		selectAllMenuItem.setDisable(true);
 		deleteFilesMenuItem.setDisable(true);
 		copyFilesMenuItem.setDisable(true);
+		overwriteFileMenuItem.setDisable(true);
+		copyAndKeepOriginalFileMenuItem.setDisable(true);
 		showOnMapMenuItem.setDisable(true);
 		copyLocationToClipboardMenuItem.setDisable(true);
 		copyFullFilenameToClipboardMenuItem.setDisable(true);
@@ -405,6 +431,11 @@ public class MainController implements Initializable {
     			copyFullFilenameToClipboardMenuItem.setDisable(false);
     		} else if (folderName.startsWith(settings.constants.folderNames.notInOther)) {
     			copyFilesMenuItem.setDisable(false);
+    			if (tableView.getSelectionModel().getSelectedIndices().size() == 1) {
+    				copyAndKeepOriginalFileMenuItem.setDisable(false);
+    				overwriteFileMenuItem.setDisable(false);
+    			}
+    			deleteFilesMenuItem.setDisable(false);
     			showOnMapMenuItem.setDisable(false);
     			copyLocationToClipboardMenuItem.setDisable(false);
     			copyFullFilenameToClipboardMenuItem.setDisable(false);
@@ -470,13 +501,13 @@ public class MainController implements Initializable {
 
 	private void displayRightImage(ChecksumFileProperties clickedRow, ChecksumFileProperties other) {
 		Image image = new Image(other.getFile().toURI().toString());
-		imageFilenameLabelRight.setText(other.getFile().getAbsolutePath());
+		imageFilenameLabelRight.setText(other.getName());
 		imageSizeLabelRight.setText(other.getSize());
 		imageViewRight.setImage(image);
 		imageViewRight.setFitHeight(400);
 		
-		imageRightRotation = clickedRow.getRotation();
-		;
+		imageRightRotation = other.getRotation();
+        imageViewRight.setRotate(imageRightRotation);
 		setRightImageViewComponentsVisible(true);
 
 		imageAddressLabelRight.setText("");
@@ -488,6 +519,15 @@ public class MainController implements Initializable {
 		} else {
 			imageAddressTitleLabelRight.setVisible(false);
 		}
+		
+	    imageOrientationTitleLabelRight.setVisible(false);
+	    imageOrientationLabelRight.setVisible(false);
+	    imageOrientationLabelRight.setText("");
+	    if (other.getOrientation() != 1) {
+		    imageOrientationLabelRight.setText(String.valueOf(other.getOrientation()));
+		    imageOrientationTitleLabelRight.setVisible(true);
+		    imageOrientationLabelRight.setVisible(true);
+	    }
 	}
 
 	private ImageView getFolderIcon() {
@@ -601,7 +641,7 @@ public class MainController implements Initializable {
 			
 			for (Integer index : selectedIndices) {
 				ChecksumFileProperties row = tableView.getItems().get(index.intValue());
-				if (copyFile(row, dest)) {
+				if (copyFile(row, dest, false)) {
 					copied.add(row);
 				}
 			}
@@ -615,6 +655,57 @@ public class MainController implements Initializable {
 	        	tableView.getItems().removeAll(copied);
 				updateDetailsOnTreeView();
 	        });
+		});
+		
+		copyAndKeepOriginalFileMenuItem.setOnAction(e -> {
+			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
+			Path toPath = Paths.get(dest.getFolder().getAbsolutePath(), row.getName());
+			Path mvPath = toPath;
+			
+			int fileNo = 0;
+			String filename = row.getName();
+			String filetype = FileUtils.getFileType(filename);
+			
+			while(Files.exists(mvPath) && !Files.isDirectory(mvPath)) { 
+			    fileNo++; 
+			    String newName = filename.replaceAll("." + filetype, " (" + fileNo + ")." + filetype);   
+			    mvPath = Paths.get(dest.getFolder().getAbsolutePath(), newName);
+			}
+			
+			if (Files.exists(toPath)) {
+				try {
+					Files.move(toPath, mvPath);
+					System.out.println("Original file on target folder saved to " + mvPath.toFile().getName());
+				} catch (IOException e1) {
+					System.out.println("Error:  Unable to rename original file, aborting copy");
+					return;
+				}
+			}
+			
+			if (copyFile(row, dest, false)) {
+				System.out.println("Copying " + row.getName() + " to " + dest.getFolder().getAbsolutePath());
+				performChecksumForDestFolder();
+				performCompareFolders();
+
+				Platform.runLater(() -> {
+					tableView.getItems().removeAll(row);
+					updateDetailsOnTreeView();
+				});
+			}
+		});
+		
+		overwriteFileMenuItem.setOnAction(e -> {
+			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
+			if (copyFile(row, dest, true)) {
+				System.out.println("Overwriting " + row.getName() + " on " + dest.getFolder().getAbsolutePath());
+				performChecksumForDestFolder();
+				performCompareFolders();
+
+				Platform.runLater(() -> {
+					tableView.getItems().removeAll(row);
+					updateDetailsOnTreeView();
+				});
+			}
 		});
        
 		
@@ -683,7 +774,7 @@ public class MainController implements Initializable {
 			if (folder.equals(settings.constants.folderNames.srcFolder)) {
 				Utils.openFolder(new File(settings.getSrcFolder()));
 			} else if (folder.equals(settings.constants.folderNames.destFolder)) {
-				Utils.openFolder(new File(settings.getSrcFolder()));
+				Utils.openFolder(new File(settings.getDestFolder()));
 			}
 
 
@@ -723,7 +814,7 @@ public class MainController implements Initializable {
 	}
 
 
-	private boolean copyFile(ChecksumFileProperties checksumFilePropertiesFile, ChecksumFolder targetFolder) {
+	private boolean copyFile(ChecksumFileProperties checksumFilePropertiesFile, ChecksumFolder targetFolder, boolean overwriteFile) {
 
 		File file = checksumFilePropertiesFile.getFile();
 		String name = checksumFilePropertiesFile.getName();
@@ -740,6 +831,11 @@ public class MainController implements Initializable {
 			if (Files.notExists(parent) ) {
 				Files.createDirectories(parent);
 			}
+					
+			if (overwriteFile) {
+				Files.deleteIfExists(toPath);
+			}
+			
 			Files.copy(fromPath, toPath, StandardCopyOption.COPY_ATTRIBUTES);
 			System.out.println("Copied file: " + file.getAbsolutePath() + " to " + toPath.toString());
 			return true;

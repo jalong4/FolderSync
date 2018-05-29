@@ -67,7 +67,6 @@ public class ChecksumFileProperties {
 					Date date = directory.getDate( ExifDirectoryBase.TAG_DATETIME );
 					try {
 						this.orientation = directory.getInt(ExifDirectoryBase.TAG_ORIENTATION);
-						System.out.println("TAG_ORIENTATION for file: " + file.getAbsolutePath() + ": " + this.orientation);
 					} catch (MetadataException e) {
 						System.out.println("Warning: an MetadataException occurred while trying to get TAG_ORIENTATION for file: " + file.getAbsolutePath());
 					}

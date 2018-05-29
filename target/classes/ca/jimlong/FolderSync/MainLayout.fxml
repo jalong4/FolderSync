@@ -26,6 +26,8 @@
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="deleteFilesMenuItem" mnemonicParsing="false" text="Delete Files..." />
                   <MenuItem fx:id="copyFilesMenuItem" mnemonicParsing="false" text="Copy Files..." />
+                  <MenuItem fx:id="overwriteFileMenuItem" mnemonicParsing="false" text="Overwrite File..." />
+                  <MenuItem fx:id="copyAndKeepOriginalFileMenuItem" mnemonicParsing="false" text="Copy and Keep Original..." />
                   <MenuItem fx:id="showOnMapMenuItem" mnemonicParsing="false" text="Show Selected on Map..." />
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="copyLocationToClipboardMenuItem" mnemonicParsing="false" text="Copy Location to Clipboard" />
@@ -83,20 +85,24 @@
         </columns>
       </TableView>
       <Label fx:id="imageFilenameTitleLabelLeft" layoutX="307.0" layoutY="390.0" prefHeight="35.0" prefWidth="60.0" text="File:" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="843.0" />
-      <Label fx:id="imageFilenameLabelLeft" prefHeight="35.0" prefWidth="332.0" AnchorPane.leftAnchor="381.0" AnchorPane.topAnchor="843.0" />
-      <ImageView fx:id="imageViewLeft" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true" style="-fx-background-color: #00000000;" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="483.0" />
+      <Label fx:id="imageFilenameLabelLeft" layoutX="399.0" prefHeight="35.0" prefWidth="314.0" AnchorPane.leftAnchor="399.0" AnchorPane.topAnchor="843.0" />
+      <ImageView fx:id="imageViewLeft" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="483.0" />
       <Label fx:id="imageSizeTitleLabelLeft" layoutX="323.0" layoutY="853.0" prefHeight="35.0" prefWidth="60.0" text="Size:" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="390.0" />
       <Label fx:id="imageSizeLabelLeft" layoutX="431.0" layoutY="400.0" prefHeight="35.0" prefWidth="332.0" AnchorPane.leftAnchor="381.0" AnchorPane.topAnchor="390.0" />
       <Label fx:id="imageFilenameTitleLabelRight" layoutX="757.0" layoutY="390.0" prefHeight="35.0" prefWidth="60.0" text="File:" AnchorPane.rightAnchor="383.0" AnchorPane.topAnchor="843.0" />
-      <Label fx:id="imageFilenameLabelRight" layoutX="441.0" layoutY="410.0" prefHeight="35.0" prefWidth="332.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="843.0" />
-      <ImageView fx:id="imageViewRight" fitHeight="300.0" fitWidth="400.0" layoutX="723.0" layoutY="452.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="166.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="483.0" />
+      <Label fx:id="imageFilenameLabelRight" layoutX="441.0" layoutY="410.0" prefHeight="35.0" prefWidth="314.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="843.0" />
+      <ImageView fx:id="imageViewRight" fitHeight="300.0" fitWidth="400.0" layoutX="723.0" layoutY="452.0" pickOnBounds="true" preserveRatio="true" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="483.0" />
       <Label fx:id="imageSizeTitleLabelRight" layoutX="323.0" layoutY="853.0" prefHeight="35.0" prefWidth="100.0" text="Size:" AnchorPane.rightAnchor="343.0" AnchorPane.topAnchor="390.0" />
       <Label fx:id="imageSizeLabelRight" layoutX="451.0" layoutY="420.0" prefHeight="35.0" prefWidth="292.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="390.0" />
       <Button fx:id="rotateImageLeftButton" layoutX="696.0" layoutY="390.0" mnemonicParsing="false" onAction="#onRotateImageLeftButtonClicked" prefHeight="35.0" prefWidth="35.0" AnchorPane.leftAnchor="678.0" AnchorPane.topAnchor="390.0" />
       <Button fx:id="rotateImageRightButton" layoutX="1128.0" layoutY="390.0" mnemonicParsing="false" onAction="#onRotateImageRightButtonClicked" prefHeight="35.0" prefWidth="35.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="390.0" />
-      <Label fx:id="imageAddressLabelLeft" layoutX="421.0" layoutY="886.0" prefHeight="35.0" prefWidth="332.0" AnchorPane.leftAnchor="381.0" AnchorPane.topAnchor="886.0" />
-      <Label fx:id="imageAddressTitleLabelLeft" layoutX="313.0" layoutY="886.0" prefHeight="35.0" prefWidth="60.0" text="Address:" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="886.0" />
-      <Label fx:id="imageAddressTitleLabelRight" layoutX="323.0" layoutY="896.0" prefHeight="35.0" prefWidth="60.0" text="Address:" AnchorPane.rightAnchor="383.0" AnchorPane.topAnchor="886.0" />
-      <Label fx:id="imageAddressLabelRight" layoutX="431.0" layoutY="896.0" prefHeight="35.0" prefWidth="332.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="886.0" />
+      <Label fx:id="imageAddressLabelLeft" layoutX="399.0" layoutY="886.0" prefHeight="35.0" prefWidth="314.0" AnchorPane.leftAnchor="399.0" AnchorPane.topAnchor="876.0" />
+      <Label fx:id="imageAddressTitleLabelLeft" layoutX="313.0" layoutY="886.0" prefHeight="35.0" prefWidth="60.0" text="Address:" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="876.0" />
+      <Label fx:id="imageAddressTitleLabelRight" layoutX="323.0" layoutY="896.0" prefHeight="35.0" prefWidth="60.0" text="Address:" AnchorPane.rightAnchor="383.0" AnchorPane.topAnchor="876.0" />
+      <Label fx:id="imageAddressLabelRight" layoutX="431.0" layoutY="896.0" prefHeight="35.0" prefWidth="314.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="876.0" />
+      <Label fx:id="imageOrientationTitleLabelRight" layoutX="756.0" layoutY="911.0" prefHeight="35.0" prefWidth="76.0" text="Orientation:" AnchorPane.rightAnchor="367.0" AnchorPane.topAnchor="906.0" />
+      <Label fx:id="imageOrientationLabelLeft" layoutX="398.0" layoutY="911.0" prefHeight="35.0" prefWidth="314.0" AnchorPane.leftAnchor="399.0" AnchorPane.topAnchor="906.0" />
+      <Label fx:id="imageOrientationLabelRight" layoutX="842.0" layoutY="911.0" prefHeight="35.0" prefWidth="314.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="906.0" />
+      <Label fx:id="imageOrientationTitleLabelLeft" layoutX="312.0" layoutY="911.0" prefHeight="35.0" prefWidth="76.0" text="Orientation:" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="906.0" />
    </children>
 </AnchorPane>
