@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.input.*?>
 <?import javafx.scene.image.*?>
 <?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
@@ -17,12 +18,20 @@
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="openSelectedFolderMenuItem" mnemonicParsing="false" text="Open Selected Folder..." />
                   <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="openFileViewSelectedViewerMenuItem" mnemonicParsing="false" text="Open File With System Viewer">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="O" control="UP" meta="DOWN" shift="UP" shortcut="UP" />
+                     </accelerator></MenuItem>
+                  <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="quitMenuItem" mnemonicParsing="false" text="Quit" />
             </items>
           </Menu>
             <Menu fx:id="editMenu" mnemonicParsing="false" text="Edit">
                <items>
-                  <MenuItem fx:id="selectAllMenuItem" mnemonicParsing="false" text="Select All" />
+                  <MenuItem fx:id="selectAllMenuItem" mnemonicParsing="false" text="Select All">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="A" control="UP" meta="DOWN" shift="UP" shortcut="UP" />
+                     </accelerator></MenuItem>
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="deleteFilesMenuItem" mnemonicParsing="false" text="Delete Files..." />
                   <MenuItem fx:id="copyFilesMenuItem" mnemonicParsing="false" text="Copy Files..." />

@@ -1,6 +1,10 @@
 package ca.jimlong.FolderSync;
 
 import java.nio.file.*;
+import java.awt.Desktop;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -77,6 +81,10 @@ public class MainController implements Initializable {
     
     @FXML
     private MenuItem openSelectedFolderMenuItem;
+    
+    @FXML
+    private MenuItem openFileViewSelectedViewerMenuItem;
+    
     
     @FXML
     private MenuItem quitMenuItem;
@@ -240,6 +248,7 @@ public class MainController implements Initializable {
 	private CompareTwoFolders compareTwoFolders;
     private Settings settings;
     private GoogleAPI googleAPI;
+    private Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
     
     public void setWindow(Stage window) {
     	this.window = window;
@@ -300,6 +309,7 @@ public class MainController implements Initializable {
 		showOnMapMenuItem.setDisable(true);
 		copyLocationToClipboardMenuItem.setDisable(true);
 		copyFullFilenameToClipboardMenuItem.setDisable(true);
+		openFileViewSelectedViewerMenuItem.setDisable(true);
 		
 		tableView.getSelectionModel().selectedItemProperty().addListener((observer, oldSelection, newSelection) -> {
 			updateEditMenuItems();
@@ -410,6 +420,7 @@ public class MainController implements Initializable {
 		showOnMapMenuItem.setDisable(true);
 		copyLocationToClipboardMenuItem.setDisable(true);
 		copyFullFilenameToClipboardMenuItem.setDisable(true);
+		openFileViewSelectedViewerMenuItem.disableProperty().bind(copyFullFilenameToClipboardMenuItem.disableProperty());
 		
 		if (tags.length != 2 || tags[1].equals(settings.constants.folderNames.rootFolder)
 				|| tableView.getItems().isEmpty()) {
@@ -693,6 +704,31 @@ public class MainController implements Initializable {
 				});
 			}
 		});
+		
+		
+		copyLocationToClipboardMenuItem.setOnAction(e -> {
+			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
+			StringSelection content = new StringSelection(row.getLocation());
+			clipboard.setContents(content, content);
+		});
+		
+		copyFullFilenameToClipboardMenuItem.setOnAction(e -> {
+			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
+			StringSelection content = new StringSelection(row.getFile().getAbsolutePath());
+			clipboard.setContents(content, content);
+			
+		});
+		
+		openFileViewSelectedViewerMenuItem.setOnAction(e -> {
+			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
+			try {
+				Desktop.getDesktop().open(row.getFile());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		});
+		
+
 		
 		overwriteFileMenuItem.setOnAction(e -> {
 			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
