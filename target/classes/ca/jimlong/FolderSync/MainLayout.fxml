@@ -12,8 +12,10 @@
         <menus>
           <Menu fx:id="fileMenu" mnemonicParsing="false" text="File">
             <items>
-              <MenuItem fx:id="openSourceFolderMenuItem" mnemonicParsing="false" text="Open Source Folder..." />
-                  <MenuItem fx:id="openDestinationFolderMenuItem" mnemonicParsing="false" text="Open Destination Folder..." />
+              <MenuItem fx:id="setSourceFolderMenuItem" mnemonicParsing="false" text="Set Source Folder..." />
+                  <MenuItem fx:id="setDestinationFolderMenuItem" mnemonicParsing="false" text="Set Destination Folder..." />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="openSelectedFolderMenuItem" mnemonicParsing="false" text="Open Selected Folder..." />
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="quitMenuItem" mnemonicParsing="false" text="Quit" />
             </items>
@@ -36,6 +38,8 @@
                   <MenuItem fx:id="checksumDestinationFolderMenuItem" mnemonicParsing="false" text="Checksum Destination Folder..." />
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="compareFoldersMenuItem" mnemonicParsing="false" text="Compare Folders..." />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="clearCacheMenuItem" mnemonicParsing="false" text="Clear Cache" />
             </items>
           </Menu>
           <Menu fx:id="helpMenu" mnemonicParsing="false" text="Help">
@@ -80,17 +84,19 @@
       </TableView>
       <Label fx:id="imageFilenameTitleLabelLeft" layoutX="307.0" layoutY="390.0" prefHeight="35.0" prefWidth="60.0" text="File:" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="843.0" />
       <Label fx:id="imageFilenameLabelLeft" prefHeight="35.0" prefWidth="332.0" AnchorPane.leftAnchor="381.0" AnchorPane.topAnchor="843.0" />
-      <ImageView fx:id="imageViewLeft" fitHeight="401.0" fitWidth="400.0" layoutX="323.0" layoutY="433.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="166.0" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="433.0" />
+      <ImageView fx:id="imageViewLeft" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true" style="-fx-background-color: #00000000;" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="483.0" />
       <Label fx:id="imageSizeTitleLabelLeft" layoutX="323.0" layoutY="853.0" prefHeight="35.0" prefWidth="60.0" text="Size:" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="390.0" />
       <Label fx:id="imageSizeLabelLeft" layoutX="431.0" layoutY="400.0" prefHeight="35.0" prefWidth="332.0" AnchorPane.leftAnchor="381.0" AnchorPane.topAnchor="390.0" />
       <Label fx:id="imageFilenameTitleLabelRight" layoutX="757.0" layoutY="390.0" prefHeight="35.0" prefWidth="60.0" text="File:" AnchorPane.rightAnchor="383.0" AnchorPane.topAnchor="843.0" />
       <Label fx:id="imageFilenameLabelRight" layoutX="441.0" layoutY="410.0" prefHeight="35.0" prefWidth="332.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="843.0" />
-      <ImageView fx:id="imageViewRight" fitHeight="401.0" fitWidth="400.0" layoutX="723.0" layoutY="452.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="166.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="433.0" />
+      <ImageView fx:id="imageViewRight" fitHeight="300.0" fitWidth="400.0" layoutX="723.0" layoutY="452.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="166.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="483.0" />
       <Label fx:id="imageSizeTitleLabelRight" layoutX="323.0" layoutY="853.0" prefHeight="35.0" prefWidth="100.0" text="Size:" AnchorPane.rightAnchor="343.0" AnchorPane.topAnchor="390.0" />
       <Label fx:id="imageSizeLabelRight" layoutX="451.0" layoutY="420.0" prefHeight="35.0" prefWidth="292.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="390.0" />
       <Button fx:id="rotateImageLeftButton" layoutX="696.0" layoutY="390.0" mnemonicParsing="false" onAction="#onRotateImageLeftButtonClicked" prefHeight="35.0" prefWidth="35.0" AnchorPane.leftAnchor="678.0" AnchorPane.topAnchor="390.0" />
       <Button fx:id="rotateImageRightButton" layoutX="1128.0" layoutY="390.0" mnemonicParsing="false" onAction="#onRotateImageRightButtonClicked" prefHeight="35.0" prefWidth="35.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="390.0" />
       <Label fx:id="imageAddressLabelLeft" layoutX="421.0" layoutY="886.0" prefHeight="35.0" prefWidth="332.0" AnchorPane.leftAnchor="381.0" AnchorPane.topAnchor="886.0" />
       <Label fx:id="imageAddressTitleLabelLeft" layoutX="313.0" layoutY="886.0" prefHeight="35.0" prefWidth="60.0" text="Address:" AnchorPane.leftAnchor="313.0" AnchorPane.topAnchor="886.0" />
+      <Label fx:id="imageAddressTitleLabelRight" layoutX="323.0" layoutY="896.0" prefHeight="35.0" prefWidth="60.0" text="Address:" AnchorPane.rightAnchor="383.0" AnchorPane.topAnchor="886.0" />
+      <Label fx:id="imageAddressLabelRight" layoutX="431.0" layoutY="896.0" prefHeight="35.0" prefWidth="332.0" AnchorPane.rightAnchor="43.0" AnchorPane.topAnchor="886.0" />
    </children>
 </AnchorPane>

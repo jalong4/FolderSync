@@ -22,6 +22,7 @@ import ca.jimlong.FolderSync.Models.GoogleAPI;
 import ca.jimlong.FolderSync.Models.GoogleGeoCodeAPI;
 import ca.jimlong.FolderSync.Models.GoogleGeoCodeResponse;
 import ca.jimlong.FolderSync.Models.Settings;
+import ca.jimlong.FolderSync.Utils.Utils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.application.Platform;
@@ -49,7 +50,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import okhttp3.HttpUrl;
 
 public class MainController implements Initializable {
 	
@@ -76,10 +76,13 @@ public class MainController implements Initializable {
     private MenuItem selectAllMenuItem;
     
     @FXML
-    private MenuItem openSourceFolderMenuItem;
+    private MenuItem setSourceFolderMenuItem;
 
     @FXML
-    private MenuItem openDestinationFolderMenuItem;
+    private MenuItem setDestinationFolderMenuItem;
+    
+    @FXML
+    private MenuItem openSelectedFolderMenuItem;
     
     @FXML
     private MenuItem quitMenuItem;
@@ -110,6 +113,9 @@ public class MainController implements Initializable {
 
     @FXML
     private MenuItem compareFoldersMenuItem;
+    
+    @FXML
+    private MenuItem clearCacheMenuItem;
 
     
     @FXML
@@ -204,7 +210,10 @@ public class MainController implements Initializable {
     private Label imageSizeTitleLabelRight;
     @FXML
     private Label imageSizeLabelRight;
-    
+    @FXML
+    private Label imageAddressTitleLabelRight;
+    @FXML
+    private Label imageAddressLabelRight;    
     @FXML
     private Button rotateImageRightButton;
     
@@ -220,6 +229,7 @@ public class MainController implements Initializable {
     
 	private CompareTwoFolders compareTwoFolders;
     private Settings settings;
+    private GoogleAPI googleAPI;
     
     public void setWindow(Stage window) {
     	this.window = window;
@@ -240,7 +250,7 @@ public class MainController implements Initializable {
         
         File file = new File(getClass().getResource(settingsFile).getFile());
         settings = new Settings(file);
-        GoogleAPI googleAPI = new GoogleAPI( new File(getClass().getResource(googleAPIFile).getFile()));
+        googleAPI = new GoogleAPI( new File(getClass().getResource(googleAPIFile).getFile()));
         
         cache = new ChecksumCache(settings.getCacheFile());
         
@@ -298,27 +308,33 @@ public class MainController implements Initializable {
 		            imageFilenameLabelLeft.setText(clickedRow.getFile().getAbsolutePath());
 		            imageSizeLabelLeft.setText(clickedRow.getSize());
 		            imageViewLeft.setImage(image);
-		            imageLeftRotation = new Integer(0);
-		            ;
+		            imageViewLeft.setFitHeight(400);
+		            
+		            imageLeftRotation = clickedRow.getRotation();
+		            imageViewLeft.setRotate(imageLeftRotation);
+		            System.out.println("TAG_ORIENTATION for file: " + file.getAbsolutePath() + ": " + clickedRow.getOrientation());
+		            System.out.println("Rotation for file: " + file.getAbsolutePath() + ": " + imageLeftRotation.intValue());
+
 		            setLeftImageViewComponentsVisible(true);
 		            
-		            GoogleGeoCodeResponse geo = GoogleGeoCodeAPI.getGeoCodeForCoordinates(googleAPI.getBaseUrl(), googleAPI.getKey(), clickedRow.getGeoLocation());
-		            
-//		            System.out.println(new Gson().toJson(geo));
-		            
-		            if (geo.results.length > 0) {
-		            	imageAddressLabelLeft.setText(geo.results[0].formatted_address);
-		            }
+		            imageAddressLabelLeft.setText("");
+		            if (!clickedRow.getLocation().equals("")) {
+		            	GoogleGeoCodeResponse geo = GoogleGeoCodeAPI.getGeoCodeForCoordinates(googleAPI.getBaseUrl(), googleAPI.getKey(), clickedRow.getGeoLocation());
 
-//		            Image image2 = new Image(url.toString());
-//		            imageFilenameLabelRight.setText(latLong);
-//		            imageSizeLabelRight.setText(clickedRow.getSize());
-//		            imageViewRight.setImage(image2);
-//		            imageRightRotation = new Integer(0);
-//		            setRightImageViewComponentsVisible(true);
+		            	if (geo.results.length > 0) {
+		            		imageAddressLabelLeft.setText(geo.results[0].formatted_address);
+		            	}
+		            } else {
+		            	imageAddressTitleLabelLeft.setVisible(false);
+		            }
+		            updateRightImageView(clickedRow);
 		        }
 		    });
 		    return row ;
+		});
+		
+		imageViewLeft.yProperty().addListener((observable, oldValue, newValue) -> {
+			System.out.println("YProperty changed from " + oldValue + " to " + newValue);
 		});
 		
 	    setImageViewComponentsVisible(false);
@@ -351,6 +367,8 @@ public class MainController implements Initializable {
 	    imageViewRight.setVisible(visible);
 	    imageSizeTitleLabelRight.setVisible(visible); 
 	    imageSizeLabelRight.setVisible(visible); 
+	    imageAddressTitleLabelRight.setVisible(visible); 
+	    imageAddressLabelRight.setVisible(visible); 
 	    rotateImageRightButton.setVisible(visible);
 	}
 	
@@ -402,6 +420,75 @@ public class MainController implements Initializable {
 		}
 		
 	}
+	
+	private void updateRightImageView(ChecksumFileProperties clickedRow) {
+		
+		String[] tags = tableView.getId().split("\\/");
+		
+		setRightImageViewComponentsVisible(false);
+		
+		if (tags.length != 2 || tags[1].equals(settings.constants.folderNames.rootFolder)
+				|| tableView.getItems().isEmpty()) {
+			return;
+		}		
+		
+		String parentFolder = tags[0];
+		String folderName = tags[1];
+		ChecksumFolder folder = (parentFolder.equals(settings.constants.folderNames.srcFolder)) ? src : dest;
+		
+		if (tableView.getSelectionModel().getSelectedIndices().size() == 1) {
+
+    		if (folderName.startsWith(settings.constants.folderNames.duplicateFiles)) {
+    			ChecksumFileProperties unique = folder.map.get(clickedRow.getChecksum());
+    			
+	            displayRightImage(clickedRow, unique);
+				
+    		} else if (folderName.startsWith(settings.constants.folderNames.uniqueFiles)) {
+    			// in priority order, show either the duplicate if there is one in the same folder/subfolder or 
+    			// show the file with the same name in the dest folder if it is a src folder
+    			
+    		} else if (folderName.startsWith(settings.constants.folderNames.skippedFiles)) {
+    			// maybe try to see if is a displayable image?
+    			
+    		} else if (folderName.startsWith(settings.constants.folderNames.notInOther)) {
+    			// show the file with the same name in the dest folder (if it exists)
+    			
+    			Path toPath = Paths.get(dest.getFolder().getAbsolutePath(), clickedRow.getName()); 
+    			
+    			if (Files.exists(toPath)) {
+    				displayRightImage(clickedRow, new ChecksumFileProperties(dest.getFolder().getAbsolutePath(), toPath.toFile(), "", true));
+    			}
+    			
+    		} else if (folderName.startsWith(settings.constants.folderNames.notInThis)) {
+    			// show the file with the same name in the src folder (if it exists)
+    		} else if (folderName.startsWith(settings.constants.folderNames.matched)) {
+    			// Maybe show the webView of the location?
+    		}
+		}
+		
+	}
+
+	private void displayRightImage(ChecksumFileProperties clickedRow, ChecksumFileProperties other) {
+		Image image = new Image(other.getFile().toURI().toString());
+		imageFilenameLabelRight.setText(other.getFile().getAbsolutePath());
+		imageSizeLabelRight.setText(other.getSize());
+		imageViewRight.setImage(image);
+		imageViewRight.setFitHeight(400);
+		
+		imageRightRotation = clickedRow.getRotation();
+		;
+		setRightImageViewComponentsVisible(true);
+
+		imageAddressLabelRight.setText("");
+		if (!other.getLocation().equals("")) {
+			GoogleGeoCodeResponse geo = GoogleGeoCodeAPI.getGeoCodeForCoordinates(googleAPI.getBaseUrl(), googleAPI.getKey(), other.getGeoLocation());
+			if (geo.results.length > 0) {
+				imageAddressLabelRight.setText(geo.results[0].formatted_address);
+			}
+		} else {
+			imageAddressTitleLabelRight.setVisible(false);
+		}
+	}
 
 	private ImageView getFolderIcon() {
 		ImageView folderIcon = new ImageView(new Image(getClass().getResourceAsStream("images/folder.png")));
@@ -410,35 +497,6 @@ public class MainController implements Initializable {
 		
 		return folderIcon;
 	}
-	
-	private ImageView centerImage(Image img) {
-		ImageView imageView = new ImageView();
-		
-        imageView.setImage(img);
-        if (img != null) {
-            double w = 0;
-            double h = 0;
-
-            double ratioX = imageView.getFitWidth() / img.getWidth();
-            double ratioY = imageView.getFitHeight() / img.getHeight();
-
-            double reducCoeff = 0;
-            if(ratioX >= ratioY) {
-                reducCoeff = ratioY;
-            } else {
-                reducCoeff = ratioX;
-            }
-
-            w = img.getWidth() * reducCoeff;
-            h = img.getHeight() * reducCoeff;
-
-            imageView.setX((imageView.getFitWidth() - w) / 2);
-            imageView.setY((imageView.getFitHeight() - h) / 2);
-
-        }
-        
-        return imageView;
-    }
 	
 	
 	@SuppressWarnings("unchecked")
@@ -455,7 +513,8 @@ public class MainController implements Initializable {
 			String parentFolder = item.getParent() == null ? "(No Parent)" : item.getParent().getValue();
 
 				
-			if (e.getButton() == MouseButton.SECONDARY) {				
+			if (e.getButton() == MouseButton.SECONDARY || (e.getButton() == MouseButton.PRIMARY 
+		             && e.getClickCount() == 2)) {				
 				if (item.getChildren().size() == 0) {
 					if (folder.equals(settings.constants.folderNames.srcFolder)) {
 						performChecksumForSrcFolder();
@@ -559,7 +618,7 @@ public class MainController implements Initializable {
 		});
        
 		
-        openSourceFolderMenuItem.setOnAction(e -> {
+        setSourceFolderMenuItem.setOnAction(e -> {
             DirectoryChooser directoryChooser = new DirectoryChooser();
             directoryChooser.setInitialDirectory(new File(settings.getSrcFolder()));
             directoryChooser.setTitle("Select " + settings.constants.folderNames.srcFolder);
@@ -576,7 +635,7 @@ public class MainController implements Initializable {
             showFolderDetailsOnTreeView(src, sourceFolderTreeItem);
         });
 
-        openDestinationFolderMenuItem.setOnAction(e -> {
+        setDestinationFolderMenuItem.setOnAction(e -> {
             DirectoryChooser directoryChooser = new DirectoryChooser();
             directoryChooser.setInitialDirectory(new File(settings.getDestFolder()));
             directoryChooser.setTitle("Select " + settings.constants.folderNames.destFolder);
@@ -590,6 +649,44 @@ public class MainController implements Initializable {
             compareFoldersMenuItem.setDisable(true);
             destinationProgressBar.setVisible(false);
             showFolderDetailsOnTreeView(dest, destinationFolderTreeItem);
+        });
+        
+        treeView.getSelectionModel().selectedItemProperty().addListener(e -> {
+        	System.out.println("treeView item(s) selected");
+        	openSelectedFolderMenuItem.setDisable(true);
+        	
+        	if (treeView.getSelectionModel().getSelectedItems().size() != 1) {
+        		return;
+        	}
+        	
+        	TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
+
+			if (item == null) {
+				return;
+			}
+			
+			String folder = item.getValue();
+			if (folder.equals(settings.constants.folderNames.srcFolder) || folder.equals(settings.constants.folderNames.destFolder)) {
+				openSelectedFolderMenuItem.setDisable(false);
+			}
+		});
+        
+        openSelectedFolderMenuItem.setDisable(true);
+        openSelectedFolderMenuItem.setOnAction(e -> {
+			TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
+			
+			if (item == null) {
+				return;
+			}
+			
+			String folder = item.getValue();
+			if (folder.equals(settings.constants.folderNames.srcFolder)) {
+				Utils.openFolder(new File(settings.getSrcFolder()));
+			} else if (folder.equals(settings.constants.folderNames.destFolder)) {
+				Utils.openFolder(new File(settings.getSrcFolder()));
+			}
+
+
         });
 
         checksumSourceFolderMenuItem.setOnAction(e -> {
@@ -605,6 +702,10 @@ public class MainController implements Initializable {
         compareFoldersMenuItem.setDisable(true);
         compareFoldersMenuItem.setOnAction(e -> {
             performCompareFolders(); 
+        });
+        
+        clearCacheMenuItem.setOnAction(e -> {
+            cache.clear(); 
         });
         
 		

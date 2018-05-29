@@ -122,7 +122,7 @@ public class ChecksumFolder {
                 String filetype = FileUtils.getFileType(filename);
 
                 if (!validFiletypes.contains(filetype)) {
-                    skippedFiles.add(new ChecksumFileProperties(this.folder.getAbsolutePath(), fileEntry, ""));
+                    skippedFiles.add(new ChecksumFileProperties(this.folder.getAbsolutePath(), fileEntry));
                     continue;
                 }
                 files.add(fileEntry);

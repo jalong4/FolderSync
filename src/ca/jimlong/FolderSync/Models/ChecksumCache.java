@@ -65,8 +65,17 @@ public class ChecksumCache {
 		
 	}
 	
-	public void flush() {
+	public void clear() {
 		cache.map = new HashMap<>();
+		
+		Path path = file.toPath();
+		
+		try {
+			Files.deleteIfExists(path);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 	
 	public void rewrite() {

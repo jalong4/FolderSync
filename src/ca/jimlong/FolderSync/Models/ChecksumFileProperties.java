@@ -19,6 +19,7 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.GeoLocation;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
+import com.drew.metadata.MetadataException;
 import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.GpsDirectory;
 
@@ -31,6 +32,7 @@ public class ChecksumFileProperties {
 	public static final String datePattern = "MMM dd, yyyy 'at' hh:mm a";
 	private File file;
 	private GeoLocation geoLocation;
+	private int orientation;
 	private SimpleStringProperty name;
 	private SimpleStringProperty dateCreated;
 	private SimpleStringProperty kind;
@@ -38,7 +40,8 @@ public class ChecksumFileProperties {
 	private SimpleStringProperty checksum;
 	private SimpleStringProperty location;
 	
-	public ChecksumFileProperties(String basePath, File file, String checksum) {		
+	
+	public ChecksumFileProperties(String basePath, File file, String checksum, boolean extractMetadata) {		
 		// some filename's have an \r at the end eg. Icon files on Google photos
 		
 		String name = new File(basePath).toURI().relativize(new File(file.getAbsolutePath()).toURI()).getPath().replaceAll("\\r","");
@@ -46,6 +49,7 @@ public class ChecksumFileProperties {
 		Path p = Paths.get(file.getAbsolutePath());
 		BasicFileAttributes attr = null;
 		String dateCreated = "";
+		this.orientation = 1;
 		
 		try {
 			
@@ -54,13 +58,19 @@ public class ChecksumFileProperties {
 		    
 			
 		    // Use date created from EXIF metadata if it exists
-			if (checksum.length() > 0) {
+			if (extractMetadata) {
 				Metadata metadata = ImageMetadataReader.readMetadata(file);
 
 				// Read Exif Data
 				Directory directory = metadata.getFirstDirectoryOfType( ExifDirectoryBase.class );
 				if (directory != null) {
 					Date date = directory.getDate( ExifDirectoryBase.TAG_DATETIME );
+					try {
+						this.orientation = directory.getInt(ExifDirectoryBase.TAG_ORIENTATION);
+						System.out.println("TAG_ORIENTATION for file: " + file.getAbsolutePath() + ": " + this.orientation);
+					} catch (MetadataException e) {
+						System.out.println("Warning: an MetadataException occurred while trying to get TAG_ORIENTATION for file: " + file.getAbsolutePath());
+					}
 					String exifDateCreated = (date == null) ? dateCreated : getFormattedDate(date);
 
 					if (!dateCreated.equals(exifDateCreated)) {
@@ -94,6 +104,18 @@ public class ChecksumFileProperties {
 		this.size = new SimpleStringProperty(formatSize(size));
 		this.checksum = new SimpleStringProperty(checksum);
 		this.location = (geoLocation != null) ? new SimpleStringProperty(getFormattedLocation(geoLocation)) : new SimpleStringProperty("");
+		
+	}
+	
+	public ChecksumFileProperties(String basePath, File file, String checksum) {
+		// Default case
+		this(basePath, file, checksum, true);
+		
+	}
+	
+	public ChecksumFileProperties(String basePath, File file) {	
+		// used for Skipped files
+		this(basePath, file, "", false);
 		
 	}
 	
@@ -141,6 +163,10 @@ public class ChecksumFileProperties {
 		return geoLocation;
 	}
 
+	public int getOrientation() {
+		return orientation;
+	}
+
 	private String formatSize(long size){
 		String returnValue;
 		
@@ -158,6 +184,38 @@ public class ChecksumFileProperties {
 		
 		formattedValues.put(returnValue, size);
 		return returnValue;
+		
+	}
+	
+	public int getRotation() {
+		
+		int rotation = 0;
+		
+	    switch (orientation) {
+	    case 1: // "Top, left side (Horizontal / normal)"
+	        break;
+	    case 2: // "Top, right side (Mirror horizontal)"
+	        break;
+	    case 3: // "Bottom, right side (Rotate 180)"
+	    	rotation = 180;
+	        break;
+	    case 4: // "Bottom, left side (Mirror vertical)"
+	        break;
+	    case 5: // "Left side, top (Mirror horizontal and rotate 270 CW)"
+	    	rotation = 270;
+	        break;
+	    case 6: // "Right side, top (Rotate 90 CW)"
+	    	rotation = 90;
+	        break;
+	    case 7: // "Right side, bottom (Mirror horizontal and rotate 90 CW)"
+	    	rotation = 90;
+	        break;
+	    case 8: // "Left side, bottom (Rotate 270 CW)"
+	    	rotation = 270;
+	        break;
+	    }
+	    
+	    return rotation;
 		
 	}
 	
