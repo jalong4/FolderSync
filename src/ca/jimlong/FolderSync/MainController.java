@@ -15,13 +15,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
 import ca.jimlong.FolderSync.Models.ChecksumCache;
-import ca.jimlong.FolderSync.Models.ChecksumFileProperties;
+import ca.jimlong.FolderSync.Models.FileProperties;
 import ca.jimlong.FolderSync.Models.ChecksumFolder;
 import ca.jimlong.FolderSync.Models.CompareTwoFolders;
 import ca.jimlong.FolderSync.Models.GoogleAPI;
 import ca.jimlong.FolderSync.Models.GoogleGeoCodeAPI;
 import ca.jimlong.FolderSync.Models.GoogleGeoCodeResponse;
+import ca.jimlong.FolderSync.Models.OrganizeFolder;
 import ca.jimlong.FolderSync.Models.Settings;
+import ca.jimlong.FolderSync.Models.SimilarFiles;
 import ca.jimlong.FolderSync.Utils.FileUtils;
 import ca.jimlong.FolderSync.Utils.Utils;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -123,7 +125,10 @@ public class MainController implements Initializable {
 
     @FXML
     private MenuItem compareFoldersMenuItem;
-    
+    @FXML   
+    private MenuItem organizeFolderMenuItem;
+    @FXML   
+    private MenuItem findSimilarInFolderMenuItem;  
     @FXML
     private MenuItem clearCacheMenuItem;
 
@@ -155,28 +160,28 @@ public class MainController implements Initializable {
 	TreeItem<String> comparisionResultsTreeItem;
 
     @FXML
-    private TableView<ChecksumFileProperties> tableView;
+    private TableView<FileProperties> tableView;
     
     @FXML
-    private TableColumn<ChecksumFileProperties, String> sizeCol;
+    private TableColumn<FileProperties, String> sizeCol;
 
     @FXML
-    private TableColumn<ChecksumFileProperties, String> checksumCol;
+    private TableColumn<FileProperties, String> checksumCol;
     
     @FXML
-    private TableColumn<ChecksumFileProperties, String> locationCol;
+    private TableColumn<FileProperties, String> locationCol;
   
     @FXML
-    private TableColumn<ChecksumFileProperties, Number> sequenceNumberCol;
+    private TableColumn<FileProperties, Number> sequenceNumberCol;
     
     @FXML
-    private TableColumn<ChecksumFileProperties, String> nameCol;
+    private TableColumn<FileProperties, String> nameCol;
 
     @FXML
-    private TableColumn<ChecksumFileProperties, String> kindCol;
+    private TableColumn<FileProperties, String> kindCol;
 
     @FXML
-    private TableColumn<ChecksumFileProperties, String> dateCreatedCol;
+    private TableColumn<FileProperties, String> dateCreatedCol;
 
    
     @FXML
@@ -279,25 +284,25 @@ public class MainController implements Initializable {
 		setTreeView();
 		setTreeViewCallbacks();
 		
-		nameCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("name"));
-		dateCreatedCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("dateCreated"));
-		kindCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("kind"));
-		sizeCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("size"));
-		checksumCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("checksum"));	
-		locationCol.setCellValueFactory(new PropertyValueFactory<ChecksumFileProperties, String>("location"));
+		nameCol.setCellValueFactory(new PropertyValueFactory<FileProperties, String>("name"));
+		dateCreatedCol.setCellValueFactory(new PropertyValueFactory<FileProperties, String>("dateCreated"));
+		kindCol.setCellValueFactory(new PropertyValueFactory<FileProperties, String>("kind"));
+		sizeCol.setCellValueFactory(new PropertyValueFactory<FileProperties, String>("size"));
+		checksumCol.setCellValueFactory(new PropertyValueFactory<FileProperties, String>("checksum"));	
+		locationCol.setCellValueFactory(new PropertyValueFactory<FileProperties, String>("location"));
 		sequenceNumberCol.setCellValueFactory(column-> new ReadOnlyObjectWrapper<Number>(tableView.getItems().indexOf(column.getValue()) + 1));
 		sequenceNumberCol.setSortable(false);
 		
 		
 		dateCreatedCol.setComparator((String s1, String s2) -> {
-			Instant i1 = LocalDateTime.parse(s1, DateTimeFormatter.ofPattern(ChecksumFileProperties.datePattern)).atZone(ZoneId.systemDefault()).toInstant();
-			Instant i2 = LocalDateTime.parse(s2, DateTimeFormatter.ofPattern(ChecksumFileProperties.datePattern)).atZone(ZoneId.systemDefault()).toInstant();
+			Instant i1 = LocalDateTime.parse(s1, DateTimeFormatter.ofPattern(FileProperties.datePattern)).atZone(ZoneId.systemDefault()).toInstant();
+			Instant i2 = LocalDateTime.parse(s2, DateTimeFormatter.ofPattern(FileProperties.datePattern)).atZone(ZoneId.systemDefault()).toInstant();
 			return i1.compareTo(i2);			
 		});
 		
 		sizeCol.setComparator((String s1, String s2) -> {
-			Long l1 = ChecksumFileProperties.formattedValues.get(s1);
-			Long l2 = ChecksumFileProperties.formattedValues.get(s2);
+			Long l1 = FileProperties.formattedValues.get(s1);
+			Long l2 = FileProperties.formattedValues.get(s2);
 			return l1.compareTo(l2);			
 		});
 		
@@ -320,12 +325,12 @@ public class MainController implements Initializable {
         });
 		
 		tableView.setRowFactory(tv -> {
-		    TableRow<ChecksumFileProperties> row = new TableRow<>();
+		    TableRow<FileProperties> row = new TableRow<>();
 		    row.setOnMouseClicked(event -> {
 		        if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY 
 		             && event.getClickCount() == 2) {
 
-		        	ChecksumFileProperties clickedRow = row.getItem();
+		        	FileProperties clickedRow = row.getItem();
 		            Image image = new Image(clickedRow.getFile().toURI().toString());
 		            imageFilenameLabelLeft.setText(clickedRow.getFile().getAbsolutePath());
 		            imageSizeLabelLeft.setText(clickedRow.getSize());
@@ -429,41 +434,48 @@ public class MainController implements Initializable {
 		
 		selectAllMenuItem.setDisable(false);
 		
+		boolean multiSelect = tableView.getSelectionModel().getSelectedIndices().size() > 1;
+		
 		if (tableView.getSelectionModel().getSelectedIndices().size() > 0) {
     		String folderName = tags[1];
     		if (folderName.startsWith(settings.constants.folderNames.duplicateFiles)) {
     			deleteFilesMenuItem.setDisable(false);
+    			copyLocationToClipboardMenuItem.setDisable(multiSelect);
+    			copyFullFilenameToClipboardMenuItem.setDisable(multiSelect);
+    		} else if (folderName.startsWith(settings.constants.folderNames.similarFiles)) {
+        			deleteFilesMenuItem.setDisable(false);
+        			copyLocationToClipboardMenuItem.setDisable(multiSelect);
+        			copyFullFilenameToClipboardMenuItem.setDisable(multiSelect);
     		} else if (folderName.startsWith(settings.constants.folderNames.uniqueFiles)) {
     			showOnMapMenuItem.setDisable(false);
-    			copyLocationToClipboardMenuItem.setDisable(false);
-    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    			deleteFilesMenuItem.setDisable(multiSelect);
+    			copyLocationToClipboardMenuItem.setDisable(multiSelect);
+    			copyFullFilenameToClipboardMenuItem.setDisable(multiSelect);
     		} else if (folderName.startsWith(settings.constants.folderNames.skippedFiles)) {
     			deleteFilesMenuItem.setDisable(false);
-    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    			copyFullFilenameToClipboardMenuItem.setDisable(multiSelect);
     		} else if (folderName.startsWith(settings.constants.folderNames.notInOther)) {
     			copyFilesMenuItem.setDisable(false);
-    			if (tableView.getSelectionModel().getSelectedIndices().size() == 1) {
-    				copyAndKeepOriginalFileMenuItem.setDisable(false);
-    				overwriteFileMenuItem.setDisable(false);
-    			}
+    			copyAndKeepOriginalFileMenuItem.setDisable(false);
+    			overwriteFileMenuItem.setDisable(multiSelect);
     			deleteFilesMenuItem.setDisable(false);
     			showOnMapMenuItem.setDisable(false);
-    			copyLocationToClipboardMenuItem.setDisable(false);
-    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    			copyLocationToClipboardMenuItem.setDisable(multiSelect);
+    			copyFullFilenameToClipboardMenuItem.setDisable(multiSelect);
     		} else if (folderName.startsWith(settings.constants.folderNames.notInThis)) {
     			showOnMapMenuItem.setDisable(false);
-    			copyLocationToClipboardMenuItem.setDisable(false);
-    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    			copyLocationToClipboardMenuItem.setDisable(multiSelect);
+    			copyFullFilenameToClipboardMenuItem.setDisable(multiSelect);
     		} else if (folderName.startsWith(settings.constants.folderNames.matched)) {
     			showOnMapMenuItem.setDisable(false);
-    			copyLocationToClipboardMenuItem.setDisable(false);
-    			copyFullFilenameToClipboardMenuItem.setDisable(false);
+    			copyLocationToClipboardMenuItem.setDisable(multiSelect);
+    			copyFullFilenameToClipboardMenuItem.setDisable(multiSelect);
     		}
 		}
 		
 	}
 	
-	private void updateRightImageView(ChecksumFileProperties clickedRow) {
+	private void updateRightImageView(FileProperties clickedRow) {
 		
 		String[] tags = tableView.getId().split("\\/");
 		
@@ -481,8 +493,7 @@ public class MainController implements Initializable {
 		if (tableView.getSelectionModel().getSelectedIndices().size() == 1) {
 
     		if (folderName.startsWith(settings.constants.folderNames.duplicateFiles)) {
-    			ChecksumFileProperties unique = folder.map.get(clickedRow.getChecksum());
-    			
+    			FileProperties unique = folder.map.get(clickedRow.getChecksum());
 	            displayRightImage(clickedRow, unique);
 				
     		} else if (folderName.startsWith(settings.constants.folderNames.uniqueFiles)) {
@@ -498,7 +509,7 @@ public class MainController implements Initializable {
     			Path toPath = Paths.get(dest.getFolder().getAbsolutePath(), clickedRow.getName()); 
     			
     			if (Files.exists(toPath)) {
-    				displayRightImage(clickedRow, new ChecksumFileProperties(dest.getFolder().getAbsolutePath(), toPath.toFile(), "", true));
+    				displayRightImage(clickedRow, new FileProperties(dest.getFolder().getAbsolutePath(), toPath.toFile(), "", true));
     			}
     			
     		} else if (folderName.startsWith(settings.constants.folderNames.notInThis)) {
@@ -510,7 +521,7 @@ public class MainController implements Initializable {
 		
 	}
 
-	private void displayRightImage(ChecksumFileProperties clickedRow, ChecksumFileProperties other) {
+	private void displayRightImage(FileProperties clickedRow, FileProperties other) {
 		Image image = new Image(other.getFile().toURI().toString());
 		imageFilenameLabelRight.setText(other.getName());
 		imageSizeLabelRight.setText(other.getSize());
@@ -556,6 +567,7 @@ public class MainController implements Initializable {
 		treeView.setOnMouseClicked(e -> {			
 			TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
 			
+			organizeFolderMenuItem.setDisable(true);
 			if (item == null) {
 				return;
 			}
@@ -580,9 +592,15 @@ public class MainController implements Initializable {
 					performAllTasks();
 				}
 			} else if (e.getButton() == MouseButton.PRIMARY) {
+				
+				if (folder.equals(settings.constants.folderNames.destFolder)) {
+					organizeFolderMenuItem.setDisable(false);
+				}
+				
 				if (parentFolder.equals(settings.constants.folderNames.srcFolder))
 					populateTableView(src, folder);
 				else if (parentFolder.equals(settings.constants.folderNames.destFolder)) {
+					organizeFolderMenuItem.setDisable(false);
 					populateTableView(dest, folder);
 				} else if (parentFolder.equals(settings.constants.folderNames.comparisonResults)) {
 					if (folder.startsWith(settings.constants.folderNames.notInOther)) {
@@ -610,6 +628,8 @@ public class MainController implements Initializable {
 		
 		if (folder.startsWith(settings.constants.folderNames.duplicateFiles)) {
 			tableView.setItems(parent.duplicateFiles);
+		} else if (folder.startsWith(settings.constants.folderNames.similarFiles)) {
+			tableView.setItems(parent.similarFiles);
 		} else if (folder.startsWith(settings.constants.folderNames.uniqueFiles)) {
 			tableView.setItems(parent.getObservableListOfMapValues());
 		} else if (folder.startsWith(settings.constants.folderNames.skippedFiles)) {
@@ -630,11 +650,11 @@ public class MainController implements Initializable {
 		
 		deleteFilesMenuItem.setOnAction(e -> {
 			ObservableList<Integer> selectedIndices = tableView.getSelectionModel().getSelectedIndices();
-			ObservableList<ChecksumFileProperties> deleted = FXCollections.observableArrayList();
+			ObservableList<FileProperties> deleted = FXCollections.observableArrayList();
 			
 			for (Integer index : selectedIndices) {
-				ChecksumFileProperties row = tableView.getItems().get(index.intValue());
-				if (deleteFile(row.getFile())) {
+				FileProperties row = tableView.getItems().get(index.intValue());
+				if (FileUtils.deleteFile(row.getFile())) {
 					deleted.add(row);
 				}
 			}
@@ -648,11 +668,11 @@ public class MainController implements Initializable {
 		
 		copyFilesMenuItem.setOnAction(e -> {
 			ObservableList<Integer> selectedIndices = tableView.getSelectionModel().getSelectedIndices();
-			ObservableList<ChecksumFileProperties> copied = FXCollections.observableArrayList();
+			ObservableList<FileProperties> copied = FXCollections.observableArrayList();
 			
 			for (Integer index : selectedIndices) {
-				ChecksumFileProperties row = tableView.getItems().get(index.intValue());
-				if (copyFile(row, dest, false)) {
+				FileProperties row = tableView.getItems().get(index.intValue());
+				if (FileUtils.copyFile(row, dest.getFolder().getAbsolutePath(), false)) {
 					copied.add(row);
 				}
 			}
@@ -669,58 +689,43 @@ public class MainController implements Initializable {
 		});
 		
 		copyAndKeepOriginalFileMenuItem.setOnAction(e -> {
-			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
-			Path toPath = Paths.get(dest.getFolder().getAbsolutePath(), row.getName());
-			Path mvPath = toPath;
+			ObservableList<Integer> selectedIndices = tableView.getSelectionModel().getSelectedIndices();
+			ObservableList<FileProperties> copied = FXCollections.observableArrayList();
 			
-			int fileNo = 0;
-			String filename = row.getName();
-			String filetype = FileUtils.getFileType(filename);
-			
-			while(Files.exists(mvPath) && !Files.isDirectory(mvPath)) { 
-			    fileNo++; 
-			    String newName = filename.replaceAll("." + filetype, " (" + fileNo + ")." + filetype);   
-			    mvPath = Paths.get(dest.getFolder().getAbsolutePath(), newName);
-			}
-			
-			if (Files.exists(toPath)) {
-				try {
-					Files.move(toPath, mvPath);
-					System.out.println("Original file on target folder saved to " + mvPath.toFile().getName());
-				} catch (IOException e1) {
-					System.out.println("Error:  Unable to rename original file, aborting copy");
-					return;
+			for (Integer index : selectedIndices) {
+				FileProperties row = tableView.getItems().get(index.intValue());
+				if (FileUtils.copyAndKeepOriginalFile(row, dest.getFolder().getAbsolutePath())) {
+					copied.add(row);
 				}
 			}
 			
-			if (copyFile(row, dest, false)) {
-				System.out.println("Copying " + row.getName() + " to " + dest.getFolder().getAbsolutePath());
-				performChecksumForDestFolder();
-				performCompareFolders();
-
-				Platform.runLater(() -> {
-					tableView.getItems().removeAll(row);
-					updateDetailsOnTreeView();
-				});
-			}
+			System.out.println("Copied " + Integer.toString(copied.size()) + " files out of " + Integer.toString(tableView.getItems().size()));
+			
+			performChecksumForDestFolder();
+			performCompareFolders();
+			
+	        Platform.runLater(() -> {
+	        	tableView.getItems().removeAll(copied);
+				updateDetailsOnTreeView();
+	        });
 		});
 		
 		
 		copyLocationToClipboardMenuItem.setOnAction(e -> {
-			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
+			FileProperties row = tableView.getSelectionModel().getSelectedItem();
 			StringSelection content = new StringSelection(row.getLocation());
 			clipboard.setContents(content, content);
 		});
 		
 		copyFullFilenameToClipboardMenuItem.setOnAction(e -> {
-			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
+			FileProperties row = tableView.getSelectionModel().getSelectedItem();
 			StringSelection content = new StringSelection(row.getFile().getAbsolutePath());
 			clipboard.setContents(content, content);
 			
 		});
 		
 		openFileViewSelectedViewerMenuItem.setOnAction(e -> {
-			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
+			FileProperties row = tableView.getSelectionModel().getSelectedItem();
 			try {
 				Desktop.getDesktop().open(row.getFile());
 			} catch (IOException e1) {
@@ -731,8 +736,9 @@ public class MainController implements Initializable {
 
 		
 		overwriteFileMenuItem.setOnAction(e -> {
-			ChecksumFileProperties row = tableView.getSelectionModel().getSelectedItem();
-			if (copyFile(row, dest, true)) {
+			FileProperties row = tableView.getSelectionModel().getSelectedItem();
+			
+			if (FileUtils.copyFile(row, dest.getFolder().getAbsolutePath(), true)) {
 				System.out.println("Overwriting " + row.getName() + " on " + dest.getFolder().getAbsolutePath());
 				performChecksumForDestFolder();
 				performCompareFolders();
@@ -831,6 +837,17 @@ public class MainController implements Initializable {
             performCompareFolders(); 
         });
         
+        organizeFolderMenuItem.setDisable(true);
+       
+        organizeFolderMenuItem.setOnAction(e -> {
+            performOrganizeFolder(); 
+        });
+        
+		findSimilarInFolderMenuItem.disableProperty().bind(organizeFolderMenuItem.disableProperty());
+		findSimilarInFolderMenuItem.setOnAction(e -> {
+            performFindSimilarInFolder(new File(settings.getDestFolder())); 
+        });		
+        
         clearCacheMenuItem.setOnAction(e -> {
             cache.clear(); 
         });
@@ -848,59 +865,37 @@ public class MainController implements Initializable {
         });
         
 	}
-
-
-	private boolean copyFile(ChecksumFileProperties checksumFilePropertiesFile, ChecksumFolder targetFolder, boolean overwriteFile) {
-
-		File file = checksumFilePropertiesFile.getFile();
-		String name = checksumFilePropertiesFile.getName();
-		
-		Path fromPath = file.toPath();
-		Path toPath = Paths.get(targetFolder.getFolder().getAbsolutePath(), name);
-
-		// create all non existing sub folders
-		Path parent = toPath.getParent();
-
-
-		
-		try {
-			if (Files.notExists(parent) ) {
-				Files.createDirectories(parent);
-			}
-					
-			if (overwriteFile) {
-				Files.deleteIfExists(toPath);
-			}
-			
-			Files.copy(fromPath, toPath, StandardCopyOption.COPY_ATTRIBUTES);
-			System.out.println("Copied file: " + file.getAbsolutePath() + " to " + toPath.toString());
-			return true;
-		} catch (IOException e1) {
-			System.out.println("Warning: an IOException occurred while trying to copy file: " + file.getAbsolutePath() + " to path: " + toPath.toString());
-			return false;
-		}
-
-	}
 	
-	private boolean deleteFile(File file) {
-		Path path = file.toPath();
-		try {
-			Files.delete(path);
-			System.out.println("Successfully deleted: " + file.getAbsolutePath());
-			return true;
-		} catch (DirectoryNotEmptyException error) {
-			System.out.println("Failed to deleted: " + file.getAbsolutePath());
-			error.printStackTrace();
-			return false;
-		} catch (IOException error) {
-			System.out.println("Failed to deleted: " + file.getAbsolutePath());
-			error.printStackTrace();
-			return false;
-		} catch (SecurityException error) {
-			System.out.println("Failed to deleted: " + file.getAbsolutePath());
-			error.printStackTrace();
-			return false;
-		}
+	private void performFindSimilarInFolder(File folder) {
+		System.out.println("Looking for simimal files in Folder " + settings.getDestFolder() + "...");
+
+
+ 
+		SimilarFiles similarFiles = new SimilarFiles(folder, settings);
+		destinationProgressBar.progressProperty().bind(similarFiles.percentComplete);
+		destinationProgressBar.setVisible(true);
+      
+		new Thread() {
+		    public void run() {
+		    	similarFiles.processFolder();
+		    	dest.similarFiles = similarFiles.getSimilar();
+		    }
+		}.start();	
+	}
+
+	private void performOrganizeFolder() {
+		System.out.println("organizing Folder " + settings.getDestFolder() + "...");
+
+		OrganizeFolder folder = new OrganizeFolder(new File(settings.getDestFolder()), settings);
+		destinationProgressBar.progressProperty().bind(folder.percentComplete);
+		destinationProgressBar.setVisible(true);
+      
+		new Thread() {
+		    public void run() {
+		    	folder.organizeFolder();		    	
+		    }
+		}.start();
+		
 	}
 
 	private void updateDetailsOnTreeView() {
@@ -933,7 +928,7 @@ public class MainController implements Initializable {
         compareTwoFolders = null;
         destinationFolderTreeItem.getChildren().clear();
         comparisionResultsTreeItem.getChildren().clear();
-		dest = new ChecksumFolder(folder, settings.getValidFiletypes(), cache);
+		dest = new ChecksumFolder(folder, settings, cache);
 		destinationProgressBar.progressProperty().bind(dest.percentComplete);
 		destinationProgressBar.setVisible(true);
 
@@ -960,7 +955,7 @@ public class MainController implements Initializable {
         compareTwoFolders = null;
         sourceFolderTreeItem.getChildren().clear();
         comparisionResultsTreeItem.getChildren().clear();
-		src = new ChecksumFolder(folder, settings.getValidFiletypes(), cache);
+		src = new ChecksumFolder(folder, settings, cache);
 		sourceProgressBar.progressProperty().bind(src.percentComplete);
 		sourceProgressBar.setVisible(true);
 
@@ -1009,6 +1004,10 @@ public class MainController implements Initializable {
 		
 		if (folder.duplicateFiles.size() > 0) {
 			treeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.duplicateFiles + " (" + Integer.toString(folder.duplicateFiles.size()) + ")"));			
+		}
+		
+		if (folder.similarFiles.size() > 0) {
+			treeItem.getChildren().add(new TreeItem<String>(settings.constants.folderNames.similarFiles + " (" + Integer.toString(folder.similarFiles.size()) + ")"));			
 		}
 		
 		if (folder.skippedFiles.size() > 0) {

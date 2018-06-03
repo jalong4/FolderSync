@@ -14,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.GeoLocation;
@@ -26,13 +27,15 @@ import com.drew.metadata.exif.GpsDirectory;
 import ca.jimlong.FolderSync.Utils.FileUtils;
 import javafx.beans.property.SimpleStringProperty;
 
-public class ChecksumFileProperties {
+public class FileProperties {
 
 	public static Map<String, Long> formattedValues = new HashMap<String, Long>();
 	public static final String datePattern = "MMM dd, yyyy 'at' hh:mm a";
 	private File file;
 	private GeoLocation geoLocation;
 	private int orientation;
+    private Date rawDateCreated;
+    private long rawSize;
 	private SimpleStringProperty name;
 	private SimpleStringProperty dateCreated;
 	private SimpleStringProperty kind;
@@ -41,7 +44,7 @@ public class ChecksumFileProperties {
 	private SimpleStringProperty location;
 	
 	
-	public ChecksumFileProperties(String basePath, File file, String checksum, boolean extractMetadata) {		
+	public FileProperties(String basePath, File file, String checksum, boolean extractMetadata) {		
 		// some filename's have an \r at the end eg. Icon files on Google photos
 		
 		String name = new File(basePath).toURI().relativize(new File(file.getAbsolutePath()).toURI()).getPath().replaceAll("\\r","");
@@ -55,6 +58,7 @@ public class ChecksumFileProperties {
 			
 			attr = Files.getFileAttributeView(p, BasicFileAttributeView.class).readAttributes();
 		    dateCreated =  (attr == null) ? "" : getFormattedDate(attr.creationTime());
+		    rawDateCreated =  (attr == null) ? new Date(0) : new Date(attr.creationTime().toMillis());
 		    
 			
 		    // Use date created from EXIF metadata if it exists
@@ -68,12 +72,13 @@ public class ChecksumFileProperties {
 					try {
 						this.orientation = directory.getInt(ExifDirectoryBase.TAG_ORIENTATION);
 					} catch (MetadataException e) {
-						System.out.println("Warning: an MetadataException occurred while trying to get TAG_ORIENTATION for file: " + file.getAbsolutePath());
+						// just continue without an error
 					}
 					String exifDateCreated = (date == null) ? dateCreated : getFormattedDate(date);
 
 					if (!dateCreated.equals(exifDateCreated)) {
 						dateCreated = exifDateCreated;
+						rawDateCreated = date;
 					}
 				}
 
@@ -94,25 +99,25 @@ public class ChecksumFileProperties {
 		}
 	    
 		String kind = FileUtils.getFileType(name).toUpperCase();
-		long size = file.length();
+		this.rawSize = file.length();
 		
 		this.file = file;
 		this.name = new SimpleStringProperty(name);
 		this.dateCreated = new SimpleStringProperty(dateCreated);
 		this.kind = new SimpleStringProperty(kind);
-		this.size = new SimpleStringProperty(formatSize(size));
+		this.size = new SimpleStringProperty(formatSize(this.rawSize));
 		this.checksum = new SimpleStringProperty(checksum);
 		this.location = (geoLocation != null) ? new SimpleStringProperty(getFormattedLocation(geoLocation)) : new SimpleStringProperty("");
 		
 	}
 	
-	public ChecksumFileProperties(String basePath, File file, String checksum) {
+	public FileProperties(String basePath, File file, String checksum) {
 		// Default case
 		this(basePath, file, checksum, true);
 		
 	}
 	
-	public ChecksumFileProperties(String basePath, File file) {	
+	public FileProperties(String basePath, File file) {	
 		// used for Skipped files
 		this(basePath, file, "", false);
 		
@@ -147,6 +152,14 @@ public class ChecksumFileProperties {
 	public String getKind(){
 		return kind.get();
 	}
+	public Date getRawDateCreated() {
+		return rawDateCreated;
+	}
+
+	public long getRawSize() {
+		return rawSize;
+	}
+
 	public String getSize(){
 		return size.get();
 	}
@@ -184,6 +197,16 @@ public class ChecksumFileProperties {
 		formattedValues.put(returnValue, size);
 		return returnValue;
 		
+	}   
+	
+	@SuppressWarnings("deprecation")
+	public int getCreatedMonth(){
+		return rawDateCreated.getMonth() + 1;
+	}
+	
+	@SuppressWarnings("deprecation")
+	public int getCreatedYear(){
+		return rawDateCreated.getYear() + 1900;
 	}
 	
 	public int getRotation() {
@@ -217,6 +240,5 @@ public class ChecksumFileProperties {
 	    return rotation;
 		
 	}
-	
 }
 

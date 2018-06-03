@@ -1,10 +1,11 @@
 {
-    "srcFolder2": "/Volumes/Files/Test/folder1",
-    "destFolder2": "/Volumes/Files/Test/folder2",
-    "srcFolder": "/Volumes/Files/Google/Google Photos/2018",
-    "destFolder": "/Volumes/Files/Google/Media/Pictures/2018",
-    "validFiletypes2": ["jpg", "png", "heic", "gif", "mov", "mp4", "jpeg", "nef", "cr2"],
-    "validFiletypes": ["jpg", "png", "heic", "gif", "jpeg", "nef", "cr2"],
+    "srcFolder": "/Volumes/Files/Jim iPhone/Videos",
+    "destFolder": "/Volumes/Files/Jim iPhone/Videos/2018/03",
+    "srcFolder1": "/Volumes/Files",
+    "destFolder1": "/Volumes/Files",
+    "validVideoFiletypes": ["mov", "mp4", "m4v", "mpg"],
+    "validPhotoFiletypes": ["jpg", "png", "heic", "gif", "jpeg", "nef", "cr2"],
+    "systemFiles": [".DS_Store"],
     "cacheFile": ".cache.json",
     "constants" : {
     	"folderNames": {
@@ -13,6 +14,7 @@
 	    	"destFolder": "Destination Folder",
 	    	"skippedFiles": "Skipped Files",
 	    	"duplicateFiles": "Duplicate Files",
+	    	"similarFiles": "Similar Files",
 	    	"uniqueFiles": "Unique Files",
 	    	"comparisonResults": "Comparison Results",
 	    	"notInThis": "Dest Files -> Src Folder",

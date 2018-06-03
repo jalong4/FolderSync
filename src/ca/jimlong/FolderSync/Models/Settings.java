@@ -2,6 +2,7 @@ package ca.jimlong.FolderSync.Models;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.nio.file.Files;
 import com.google.gson.Gson;
@@ -10,6 +11,9 @@ public class Settings {
     private String srcFolder;
     private String destFolder;
     private List<String> validFiletypes;
+    private List<String> validVideoFiletypes;
+    private List<String> validPhotoFiletypes;
+    private List<String> systemFiles;
     private String cacheFile;
 	public Constants constants = new Constants();
     
@@ -22,6 +26,7 @@ public class Settings {
     		public String skippedFiles = "";
     		public String uniqueFiles = "";
     		public String duplicateFiles = "";
+    		public String similarFiles = "";
     		public String comparisonResults = "";
     		public String notInThis  = "";
     		public String notInOther = "";
@@ -48,8 +53,20 @@ public class Settings {
 		this.destFolder = destFolder;
 	}
 
-	public List<String> getValidFiletypes() {
+	public List<String> getValidPhotoFiletypes() {
+		return validPhotoFiletypes;
+	}
+	
+	public List<String> getValidVideoFiletypes() {
+		return validVideoFiletypes;
+	}
+	
+	public List<String> getValidFiletypes() {	
 		return validFiletypes;
+	}
+	
+	public List<String> getSystemFiles() {
+		return systemFiles;
 	}
 
 	public String getCacheFile() {
@@ -75,7 +92,11 @@ public class Settings {
 		Settings settings = gson.fromJson(json, Settings.class);
 		this.srcFolder = settings.srcFolder;
 		this.destFolder = settings.destFolder;
-		this.validFiletypes = settings.validFiletypes;
+		this.validPhotoFiletypes = settings.validPhotoFiletypes;
+		this.validVideoFiletypes = settings.validVideoFiletypes;
+		this.validFiletypes = new ArrayList<>(validPhotoFiletypes);
+		this.validFiletypes.addAll(validVideoFiletypes);
+		this.systemFiles = settings.systemFiles;
 		this.cacheFile = settings.cacheFile;
 		this.constants = settings.constants;
 	}

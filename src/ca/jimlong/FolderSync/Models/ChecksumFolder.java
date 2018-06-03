@@ -13,33 +13,38 @@ import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.collections.ObservableList; 
 
 
 public class ChecksumFolder {
 
     private File folder;
+    private SimilarFiles _similarFiles;
     private ChecksumCache cache;
     private List<String> validFiletypes;
-    public TreeMap<String, ChecksumFileProperties> map;
+    public TreeMap<String, FileProperties> map;
 
-    public ObservableList<ChecksumFileProperties> duplicateFiles;
-    public ObservableList<ChecksumFileProperties> skippedFiles;
+    public ObservableList<FileProperties> duplicateFiles;
+    public ObservableList<FileProperties> similarFiles;
+    public ObservableList<FileProperties> skippedFiles;
     public DoubleProperty percentComplete;
     public DoubleProperty comparePercentComplete;
     private boolean checksumCompleted;
+    
 
 
-    public ChecksumFolder(File folder, List<String> validFiletypes, ChecksumCache cache) {
+    public ChecksumFolder(File folder, Settings settings, ChecksumCache cache) {
         this.folder = folder;
-        this.validFiletypes = validFiletypes;
+        this.validFiletypes = settings.getValidFiletypes();
         this.duplicateFiles = FXCollections.observableArrayList();
+        this.similarFiles = FXCollections.observableArrayList();
         this.skippedFiles = FXCollections.observableArrayList();
         this.percentComplete = new SimpleDoubleProperty(0.0);
         this.comparePercentComplete = new SimpleDoubleProperty(0.0);
-        this.map =  new TreeMap<String, ChecksumFileProperties>();
+        this.map =  new TreeMap<String, FileProperties>();
         this.checksumCompleted = false;
         this.cache = cache;
+        this._similarFiles = new SimilarFiles(folder, settings);
     }
     
 	public File getFolder() {
@@ -69,7 +74,7 @@ public class ChecksumFolder {
 
         return complete.digest();
     }
- 
+	
     // see this How-to for a faster way to convert
     // a byte array to a HEX string
     private  String getMD5Checksum(String filename) {
@@ -102,6 +107,8 @@ public class ChecksumFolder {
         List<File> files = getAllFilesInFolder(folder, validFiletypes);
         if (files.size() > 0) {
         	map = generateChecksumMapForFolder(files, validFiletypes);
+        	_similarFiles.processFolder(files);
+        	this.similarFiles = _similarFiles.getSimilar();
         } else {
         	percentComplete.set(1.0);
         }
@@ -122,7 +129,7 @@ public class ChecksumFolder {
                 String filetype = FileUtils.getFileType(filename);
 
                 if (!validFiletypes.contains(filetype)) {
-                    skippedFiles.add(new ChecksumFileProperties(this.folder.getAbsolutePath(), fileEntry));
+                    skippedFiles.add(new FileProperties(this.folder.getAbsolutePath(), fileEntry));
                     continue;
                 }
                 files.add(fileEntry);
@@ -132,9 +139,9 @@ public class ChecksumFolder {
         return files;
     }
 
-    private TreeMap<String, ChecksumFileProperties> generateChecksumMapForFolder(List<File> files, List<String> validFiletypes) {
+    private TreeMap<String, FileProperties> generateChecksumMapForFolder(List<File> files, List<String> validFiletypes) {
 
-        TreeMap<String, ChecksumFileProperties> map = new TreeMap<>();
+        TreeMap<String, FileProperties> map = new TreeMap<>();
 
         int total = files.size();
         double current = 0.0;
@@ -152,7 +159,7 @@ public class ChecksumFolder {
                 String path = fileEntry.getAbsolutePath();
                 String checksum = getMD5Checksum(path);
                 if (map.containsKey(checksum)) {
-                	ChecksumFileProperties originalChecksumFile = map.get(checksum);
+                	FileProperties originalChecksumFile = map.get(checksum);
                 	File originalFile = originalChecksumFile.getFile();
                 	System.out.println("orig getName " + originalFile.getName());
                 	System.out.println("orig getParent " + originalFile.getParent());
@@ -167,15 +174,15 @@ public class ChecksumFolder {
                     	if (originalBaseName.startsWith(baseName)) {
                     		duplicateFiles.add(originalChecksumFile);
                     		map.remove(checksum);
-                    		map.put(checksum, new ChecksumFileProperties(this.folder.getAbsolutePath(), fileEntry, checksum));
+                    		map.put(checksum, new FileProperties(this.folder.getAbsolutePath(), fileEntry, checksum));
                     	} else {
-                    		duplicateFiles.add(new ChecksumFileProperties(this.folder.getAbsolutePath(), fileEntry, checksum));  
+                    		duplicateFiles.add(new FileProperties(this.folder.getAbsolutePath(), fileEntry, checksum));  
                     	}
                     } else {
-                        duplicateFiles.add(new ChecksumFileProperties(this.folder.getAbsolutePath(), fileEntry, checksum));                    	
+                        duplicateFiles.add(new FileProperties(this.folder.getAbsolutePath(), fileEntry, checksum));                    	
                     }
                 } else {
-                    map.put(checksum, new ChecksumFileProperties(this.folder.getAbsolutePath(), fileEntry, checksum));
+                    map.put(checksum, new FileProperties(this.folder.getAbsolutePath(), fileEntry, checksum));
                 }
             }
 
@@ -192,8 +199,8 @@ public class ChecksumFolder {
         return map;
     }
     
-    public ObservableList<ChecksumFileProperties> getObservableListOfMapValues() {
-    	ObservableList<ChecksumFileProperties> values = FXCollections.observableArrayList();
+    public ObservableList<FileProperties> getObservableListOfMapValues() {
+    	ObservableList<FileProperties> values = FXCollections.observableArrayList();
     	
     	for (String key : map.keySet()) {
     		values.add(map.get(key));
@@ -221,8 +228,8 @@ public class ChecksumFolder {
         }
     }
 
-    private ObservableList<ChecksumFileProperties> createObservableListOfChecksumFileProperties(TreeMap<String, ChecksumFileProperties> map, List<String> list) {
-    	ObservableList<ChecksumFileProperties> results = FXCollections.observableArrayList();
+    private ObservableList<FileProperties> createObservableListOfFileProperties(TreeMap<String, FileProperties> map, List<String> list) {
+    	ObservableList<FileProperties> results = FXCollections.observableArrayList();
     	
     	for (String key : list) {
     		results.add(map.get(key));
@@ -254,9 +261,9 @@ public class ChecksumFolder {
         matched.retainAll(dest);
         updateProgressBar(comparePercentComplete, 0.9);
         
-        compareTwoFolders.notInThis = createObservableListOfChecksumFileProperties(other.map, notInThis);
-        compareTwoFolders.notInOther = createObservableListOfChecksumFileProperties(map, notInOther);
-        compareTwoFolders.matched = createObservableListOfChecksumFileProperties(map, matched);
+        compareTwoFolders.notInThis = createObservableListOfFileProperties(other.map, notInThis);
+        compareTwoFolders.notInOther = createObservableListOfFileProperties(map, notInOther);
+        compareTwoFolders.matched = createObservableListOfFileProperties(map, matched);
 
         updateProgressBar(comparePercentComplete, 1.0);
         
@@ -266,10 +273,6 @@ public class ChecksumFolder {
 
 	public boolean isChecksumCompleted() {
 		return checksumCompleted;
-	}
-
-	public void setChecksumCompleted(boolean checksumCompleted) {
-		this.checksumCompleted = checksumCompleted;
 	}
     
 } 

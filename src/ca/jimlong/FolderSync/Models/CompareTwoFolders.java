@@ -8,9 +8,9 @@ import javafx.collections.ObservableList;
 public class CompareTwoFolders {
     public File srcFolder;
     public File destFolder;
-    public ObservableList<ChecksumFileProperties> notInOther;
-    public ObservableList<ChecksumFileProperties> notInThis;
-    public ObservableList<ChecksumFileProperties> matched;
+    public ObservableList<FileProperties> notInOther;
+    public ObservableList<FileProperties> notInThis;
+    public ObservableList<FileProperties> matched;
 
     public CompareTwoFolders(File srcFolder, File destFolder) {
         this.srcFolder = srcFolder;

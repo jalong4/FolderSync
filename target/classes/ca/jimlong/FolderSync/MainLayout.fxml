@@ -50,6 +50,10 @@
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="compareFoldersMenuItem" mnemonicParsing="false" text="Compare Folders..." />
                   <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="organizeFolderMenuItem" mnemonicParsing="false" text="Organize Folder..." />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="findSimilarInFolderMenuItem" mnemonicParsing="false" text="Find Similar in Folder..." />
+                  <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="clearCacheMenuItem" mnemonicParsing="false" text="Clear Cache" />
             </items>
           </Menu>
