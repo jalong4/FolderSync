@@ -1,6 +1,6 @@
 {
-    "srcFolder": "/Volumes/Files/Jim iPhone/Videos",
-    "destFolder": "/Volumes/Files/Jim iPhone/Videos/2018/03",
+    "srcFolder": "/Users/jalong4/Desktop/Media/Videos/2018/01",
+    "destFolder": "/Volumes/Cloud Drives/Google Drive/Media/Videos/2018/01",
     "srcFolder1": "/Volumes/Files",
     "destFolder1": "/Volumes/Files",
     "validVideoFiletypes": ["mov", "mp4", "m4v", "mpg"],

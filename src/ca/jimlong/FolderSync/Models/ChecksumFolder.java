@@ -61,10 +61,15 @@ public class ChecksumFolder {
 
         MessageDigest complete = MessageDigest.getInstance("MD5");
 
-        int numRead;
+        int numRead = 0;
  
         do {
-			numRead = fis.read(buffer);
+			try {
+				numRead = fis.read(buffer);
+			} catch (Exception e) {
+				System.out.println("error reading " + filename);
+				e.printStackTrace();
+			}
             if (numRead > 0) {
                 complete.update(buffer, 0, numRead);
             }
@@ -161,9 +166,6 @@ public class ChecksumFolder {
                 if (map.containsKey(checksum)) {
                 	FileProperties originalChecksumFile = map.get(checksum);
                 	File originalFile = originalChecksumFile.getFile();
-                	System.out.println("orig getName " + originalFile.getName());
-                	System.out.println("orig getParent " + originalFile.getParent());
-                	System.out.println("orig getPath " + originalFile.getPath());
                 	
                     System.out.println("Filename: " + path + " is a Duplicate of: " + map.get(checksum).getName() + " Checksum: "
                             + checksum);
