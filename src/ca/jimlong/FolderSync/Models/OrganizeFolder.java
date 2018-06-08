@@ -18,8 +18,6 @@ import javafx.collections.ObservableList;
 public class OrganizeFolder {
     private File folder;
     private List<String> validFiletypes;
-    private List<String> validVideoFiletypes;
-    private List<String> validPhotoFiletypes;
     private List<String> systemFiles;
 
     public ObservableList<FileProperties> skippedFiles;
@@ -27,14 +25,12 @@ public class OrganizeFolder {
     public DoubleProperty percentComplete;
     public DoubleProperty comparePercentComplete;
     private boolean completed;
-	Map <String, Map<Integer, Map<Integer, List<FileProperties>>>> map;
+	Map<Integer, Map<Integer, List<FileProperties>>> map;
 
 
     public OrganizeFolder(File folder, Settings settings) {
         this.folder = folder;
         this.validFiletypes = settings.getValidFiletypes();
-        this.validVideoFiletypes = settings.getValidVideoFiletypes();
-        this.validPhotoFiletypes = settings.getValidPhotoFiletypes();
         this.systemFiles = settings.getSystemFiles();
         this.skippedFiles = FXCollections.observableArrayList();
         this.moved = FXCollections.observableArrayList();
@@ -75,47 +71,32 @@ public class OrganizeFolder {
             		System.out.println("Unexcepted filetype for file: " + file.getAbsolutePath().toLowerCase());
             	} else {
 
-
-            		String mediaType = (validPhotoFiletypes.contains(filetype)) ? "Photos" : (validVideoFiletypes.contains(filetype)) ? "Videos" : "Unknown";
         			FileProperties fileProperties = new FileProperties(this.folder.getAbsolutePath(), file, "", true);  // true means extract metadata
         			Integer year = new Integer(fileProperties.getCreatedYear());
         			Integer month = new Integer(fileProperties.getCreatedMonth());
         			
-            		if (map.containsKey(mediaType)) {
-            			Map <Integer, Map<Integer, List<FileProperties>>> yearMap = map.get(mediaType);
+        			if (map.containsKey(year)) {
+        				Map<Integer, List<FileProperties>> monthMap = map.get(year);
 
-            			if (yearMap.containsKey(year)) {
-            				Map<Integer, List<FileProperties>> monthMap = yearMap.get(year);
-
-            				if (monthMap.containsKey(month)) {
-            					List<FileProperties> monthFiles = monthMap.get(month);
-            					if (monthFiles.isEmpty()) {
-            						monthFiles = new ArrayList<>();
-            					}
-            					monthFiles.add(fileProperties);
-            				} else {
-            					List<FileProperties> monthFiles = new ArrayList<>();
-            					monthFiles.add(fileProperties);
-            					monthMap.put(month, monthFiles);
-            				}
-            			} else {
-            				Map<Integer, List<FileProperties>> monthMap = new HashMap<>();
-            				List<FileProperties> monthFiles = new ArrayList<>();
-            				monthFiles.add(fileProperties);
-            				monthMap.put(month, monthFiles);
-            				yearMap.put(year, monthMap);
-            			}
-            			
-            		
-            		} else {
-            			Map <Integer, Map<Integer, List<FileProperties>>> yearMap = new HashMap<>();
-            			Map<Integer, List<FileProperties>> monthMap = new HashMap<>();
-            			List<FileProperties> monthFiles = new ArrayList<>();
+        				if (monthMap.containsKey(month)) {
+        					List<FileProperties> monthFiles = monthMap.get(month);
+        					if (monthFiles.isEmpty()) {
+        						monthFiles = new ArrayList<>();
+        					}
+        					monthFiles.add(fileProperties);
+        				} else {
+        					List<FileProperties> monthFiles = new ArrayList<>();
+        					monthFiles.add(fileProperties);
+        					monthMap.put(month, monthFiles);
+        				}
+        			} else {
+        				Map<Integer, List<FileProperties>> monthMap = new HashMap<>();
+        				List<FileProperties> monthFiles = new ArrayList<>();
         				monthFiles.add(fileProperties);
         				monthMap.put(month, monthFiles);
-            			yearMap.put(year, monthMap);
-            			map.put(mediaType, yearMap);            			
-            		}
+        				map.put(year, monthMap);
+        			}
+            			
             	}
 
             	current++;
@@ -141,51 +122,39 @@ public class OrganizeFolder {
 	
 	
     private void printMap() {
-    	for (String mediaType : map.keySet()) {
-    		System.out.println();
-    		System.out.println("Media: " + mediaType);
-    		System.out.println();
-    		Map <Integer, Map<Integer, List<FileProperties>>> yearMap = map.get(mediaType);
-    		for (Integer year : yearMap.keySet()) {
-    			Map<Integer, List<FileProperties>> monthMap = yearMap.get(year);
-    			for (Integer month : monthMap.keySet()) {
-    				List<FileProperties> monthFiles = monthMap.get(month);
-    				for (FileProperties file : monthFiles) {
-    					String yearPrefix = (map.keySet().size() == 1) ? "" : year.toString() + "/";
-    					String filename = Paths.get(file.getName()).getFileName().toString();
-    					System.out.println("Moving " + file.getName() + " to " + yearPrefix + String.format("%02d", month.intValue()) + '/' + filename);
-    				}
+    	for (Integer year : map.keySet()) {
+    		Map<Integer, List<FileProperties>> monthMap = map.get(year);
+    		for (Integer month : monthMap.keySet()) {
+    			List<FileProperties> monthFiles = monthMap.get(month);
+    			for (FileProperties file : monthFiles) {
+    				String yearPrefix = (map.keySet().size() == 1) ? "" : year.toString() + "/";
+    				String filename = Paths.get(file.getName()).getFileName().toString();
+    				System.out.println("Moving " + file.getName() + " to " + yearPrefix + String.format("%02d", month.intValue()) + '/' + filename);
     			}
     		}
     	}
 	}
     
     private void moveFiles() {
-    	for (String mediaType : map.keySet()) {
-    		System.out.println();
-    		System.out.println("Media: " + mediaType);
-    		System.out.println();
-    		Map <Integer, Map<Integer, List<FileProperties>>> yearMap = map.get(mediaType);
-    		for (Integer year : yearMap.keySet()) {
-    			Map<Integer, List<FileProperties>> monthMap = yearMap.get(year);
-    			for (Integer month : monthMap.keySet()) {
-    				List<FileProperties> monthFiles = monthMap.get(month);
-    				for (FileProperties file : monthFiles) {
-    					Path fromPath = file.getFile().toPath();
-    					String mediaPrefix = (map.keySet().size() == 1) ? "" : mediaType + "/";
-    					String yearPrefix = (yearMap.keySet().size() == 1) ? "" : year.toString() + "/";
-    					String filename = Paths.get(file.getName()).getFileName().toString();
-    					Path toPath = Paths.get(folder.getAbsolutePath(), mediaPrefix, yearPrefix + String.format("%02d", month.intValue()) + '/' + filename);
-    					System.out.println("Moving " + file.getName() + " to " + toPath.toString());
-    					if (FileUtils.moveFile(fromPath, toPath)) {
-    						moved.add(file);
-    					}
+
+    	for (Integer year : map.keySet()) {
+    		Map<Integer, List<FileProperties>> monthMap = map.get(year);
+    		for (Integer month : monthMap.keySet()) {
+    			List<FileProperties> monthFiles = monthMap.get(month);
+    			for (FileProperties file : monthFiles) {
+    				Path fromPath = file.getFile().toPath();
+    				String yearPrefix = (map.keySet().size() == 1) ? "" : year.toString() + "/";
+    				String filename = Paths.get(file.getName()).getFileName().toString();
+    				Path toPath = Paths.get(folder.getAbsolutePath(), yearPrefix + String.format("%02d", month.intValue()) + '/' + filename);
+    				System.out.println("Moving " + file.getName() + " to " + toPath.toString());
+    				if (FileUtils.moveFile(fromPath, toPath)) {
+    					moved.add(file);
     				}
     			}
     		}
     	}
-		
-	}
+
+    }
     
     private void removeEmptyDirectories(File folder) {
         for (final File fileEntry : folder.listFiles()) {

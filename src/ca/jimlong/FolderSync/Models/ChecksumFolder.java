@@ -114,7 +114,8 @@ public class ChecksumFolder {
         	map = generateChecksumMapForFolder(files, validFiletypes);
         	_similarFiles.processFolder(files);
         	this.similarFiles = _similarFiles.getSimilar();
-        } else {
+        	this.similarFiles.removeAll(duplicateFiles);
+        	} else {
         	percentComplete.set(1.0);
         }
         checksumCompleted = true;

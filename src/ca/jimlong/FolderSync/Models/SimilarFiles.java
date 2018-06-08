@@ -78,6 +78,7 @@ public class SimilarFiles {
 
 		for (final File file : files) {
 			String filename = file.getName();
+			String filetype = FileUtils.getFileType(filename);
 			String filenameWithoutType = FileUtils.getFileNameWithoutType(filename);
 
 			FileProperties fileProperties = new FileProperties(this.folder.getAbsolutePath(), file, "", true);  // true means extract metadata
@@ -87,6 +88,10 @@ public class SimilarFiles {
 				
 				File similarFile = files.get(i);
 				if (!similarFile.getName().startsWith(filenameWithoutType)) {
+					continue;
+				}
+				
+				if (!filetype.equals(FileUtils.getFileType(similarFile.getName()))) {
 					continue;
 				}
 				
