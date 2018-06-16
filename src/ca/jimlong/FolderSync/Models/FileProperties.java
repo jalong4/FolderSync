@@ -68,7 +68,7 @@ public class FileProperties {
 				// Read Exif Data
 				Directory directory = metadata.getFirstDirectoryOfType( ExifDirectoryBase.class );
 				if (directory != null) {
-					Date date = directory.getDate( ExifDirectoryBase.TAG_DATETIME );
+					Date date = directory.getDate(ExifDirectoryBase.TAG_DATETIME );
 					try {
 						this.orientation = directory.getInt(ExifDirectoryBase.TAG_ORIENTATION);
 					} catch (MetadataException e) {

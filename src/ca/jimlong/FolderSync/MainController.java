@@ -928,7 +928,7 @@ public class MainController implements Initializable {
         compareTwoFolders = null;
         destinationFolderTreeItem.getChildren().clear();
         comparisionResultsTreeItem.getChildren().clear();
-		dest = new ChecksumFolder(folder, settings, cache);
+		dest = new ChecksumFolder(folder, settings.getDestFolderFilter(), settings, cache);
 		destinationProgressBar.progressProperty().bind(dest.percentComplete);
 		destinationProgressBar.setVisible(true);
 
@@ -955,7 +955,7 @@ public class MainController implements Initializable {
         compareTwoFolders = null;
         sourceFolderTreeItem.getChildren().clear();
         comparisionResultsTreeItem.getChildren().clear();
-		src = new ChecksumFolder(folder, settings, cache);
+		src = new ChecksumFolder(folder, settings.getSrcFolderFilter(), settings, cache);
 		sourceProgressBar.progressProperty().bind(src.percentComplete);
 		sourceProgressBar.setVisible(true);
 

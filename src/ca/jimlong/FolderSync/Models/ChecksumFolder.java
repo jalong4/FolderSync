@@ -1,14 +1,19 @@
 package ca.jimlong.FolderSync.Models;
 import ca.jimlong.FolderSync.Utils.FileUtils;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
+
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -19,6 +24,7 @@ import javafx.collections.ObservableList;
 public class ChecksumFolder {
 
     private File folder;
+    private String filter;
     private SimilarFiles _similarFiles;
     private ChecksumCache cache;
     private List<String> validFiletypes;
@@ -33,8 +39,9 @@ public class ChecksumFolder {
     
 
 
-    public ChecksumFolder(File folder, Settings settings, ChecksumCache cache) {
+    public ChecksumFolder(File folder, String filter, Settings settings, ChecksumCache cache) {
         this.folder = folder;
+        this.filter = filter;
         this.validFiletypes = settings.getValidFiletypes();
         this.duplicateFiles = FXCollections.observableArrayList();
         this.similarFiles = FXCollections.observableArrayList();
@@ -125,7 +132,32 @@ public class ChecksumFolder {
 
         List<File> files = new ArrayList<File>();
 
-        for (final File fileEntry : folder.listFiles()) {
+
+        File[] allFiles = folder.listFiles(( dir, name ) -> {
+        	
+        	// only filter top level folders
+        	
+        	if (filter.isEmpty()) {
+        		return true;
+        	}
+        	
+        	if (!dir.equals(this.folder)) {
+        		return true;
+        	}
+       	
+        	File filename = Paths.get(dir.getAbsolutePath(), name).toFile();
+        	if (filename.isFile()) {
+        		return true;
+        	}
+        	
+        	boolean matches = Pattern.compile(filter).matcher(name).matches();
+        	if (!matches) {
+        		System.out.println("Filtering folder: " + name);
+        	}
+        	return matches;
+        });
+        
+        for (final File fileEntry : allFiles) {
             if (fileEntry.isDirectory()) {
                 System.out.println("Folder:" + fileEntry.getName());
                 List<File> subFolderFiles = getAllFilesInFolder(fileEntry, validFiletypes);
@@ -143,6 +175,29 @@ public class ChecksumFolder {
         }
 
         return files;
+    }
+    
+    private boolean isDuplicate(File file, String checksum, TreeMap<String, FileProperties> map) {
+    	
+        String filetype = FileUtils.getFileType(file.getName().toLowerCase());
+        
+        if (map.containsKey(checksum)) {
+        	FileProperties originalChecksumFile = map.get(checksum);
+        	File originalFile = originalChecksumFile.getFile();
+            String originalFiletype = FileUtils.getFileType(originalFile.getName().toLowerCase());        	
+        	if (!originalFiletype.equals(filetype)) {
+        		return false;
+        	}
+        	
+        	// ignore dups from other subfolders
+        	if (!file.getParent().equals(originalFile.getParent())) {
+        		return false;
+        	}
+        	
+        	return true;
+        }
+        
+        return false;
     }
 
     private TreeMap<String, FileProperties> generateChecksumMapForFolder(List<File> files, List<String> validFiletypes) {
@@ -164,10 +219,11 @@ public class ChecksumFolder {
 
                 String path = fileEntry.getAbsolutePath();
                 String checksum = getMD5Checksum(path);
-                if (map.containsKey(checksum)) {
-                	FileProperties originalChecksumFile = map.get(checksum);
-                	File originalFile = originalChecksumFile.getFile();
-                	
+
+
+                if (isDuplicate(fileEntry, checksum, map)) {
+                    FileProperties originalChecksumFile = map.get(checksum);
+                    File originalFile = originalChecksumFile.getFile();                	
                     System.out.println("Filename: " + path + " is a Duplicate of: " + map.get(checksum).getName() + " Checksum: "
                             + checksum);
                     

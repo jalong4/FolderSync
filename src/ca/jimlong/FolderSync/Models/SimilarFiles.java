@@ -100,7 +100,6 @@ public class SimilarFiles {
 				
 				if ((fileProperties.getRawSize() != similarFileProperties.getRawSize())
 						|| !fileProperties.getRawDateCreated().equals(similarFileProperties.getRawDateCreated())) {
-					System.out.println("Similar filenames: " + fileProperties.getName() + " and " + similarFileProperties.getName() + " but not equal sizes or creation dates, skipping");
 					continue;
 				}
 				

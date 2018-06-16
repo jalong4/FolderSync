@@ -1,8 +1,8 @@
 {
-    "srcFolder": "/Volumes/Cloud Drives/One Drive/Oleander",
-    "destFolder": "/Volumes/Cloud Drives/One Drive/Oleander",
-    "srcFolder1": "/Volumes/Files",
-    "destFolder1": "/Volumes/Cloud Drives/Google Drive/Media/Photos",
+    "srcFolder": "/Volumes/Cloud Drives/Google Drive/Media/Photos",
+    "destFolder": "/Volumes/Cloud Drives/Google Drive/Media/Photos",
+    "srcFolderFilter": "^(19|20)\\d{2}$",
+    "destFolderFilter": "^(19|20)\\d{2}$",
     "validVideoFiletypes": ["mov", "mp4", "m4v", "mpg"],
     "validPhotoFiletypes": ["jpg", "png", "heic", "gif", "jpeg", "nef", "cr2"],
     "systemFiles": [".DS_Store"],

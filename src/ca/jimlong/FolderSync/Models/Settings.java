@@ -10,6 +10,8 @@ import com.google.gson.Gson;
 public class Settings {
     private String srcFolder;
     private String destFolder;
+    private String srcFolderFilter;
+    private String destFolderFilter;
     private List<String> validFiletypes;
     private List<String> validVideoFiletypes;
     private List<String> validPhotoFiletypes;
@@ -52,6 +54,14 @@ public class Settings {
 	public void setDestFolder(String destFolder) {
 		this.destFolder = destFolder;
 	}
+	
+	public String getSrcFolderFilter() {
+		return srcFolderFilter;
+	}
+	
+	public String getDestFolderFilter() {
+		return destFolderFilter;
+	}
 
 	public List<String> getValidPhotoFiletypes() {
 		return validPhotoFiletypes;
@@ -92,6 +102,8 @@ public class Settings {
 		Settings settings = gson.fromJson(json, Settings.class);
 		this.srcFolder = settings.srcFolder;
 		this.destFolder = settings.destFolder;
+		this.srcFolderFilter = settings.srcFolderFilter;
+		this.destFolderFilter = settings.destFolderFilter;
 		this.validPhotoFiletypes = settings.validPhotoFiletypes;
 		this.validVideoFiletypes = settings.validVideoFiletypes;
 		this.validFiletypes = new ArrayList<>(validPhotoFiletypes);
