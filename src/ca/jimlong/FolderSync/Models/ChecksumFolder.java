@@ -120,7 +120,7 @@ public class ChecksumFolder {
 
     public void generateChecksumMapForFolder() {
         checksumCompleted = false;
-        List<File> files = getAllFilesInFolder(folder, validFiletypes);
+        List<File> files = FileUtils.getAllFilesInFolder(this, folder, validFiletypes, skippedFiles);
         if (files.size() > 0) {
         	map = generateChecksumMapForFolder(files, validFiletypes);
         	_similarFiles.processFolder(files);
@@ -130,55 +130,6 @@ public class ChecksumFolder {
         	percentComplete.set(1.0);
         }
         checksumCompleted = true;
-    }
-
-    private List<File> getAllFilesInFolder(File folder, List<String> validFiletypes) {
-
-        List<File> files = new ArrayList<File>();
-
-
-        File[] allFiles = folder.listFiles(( dir, name ) -> {
-        	
-        	// only filter top level folders
-        	
-        	if (filter == null || filter.isEmpty()) {
-        		return true;
-        	}
-        	
-        	if (!dir.equals(this.folder)) {
-        		return true;
-        	}
-       	
-        	File filename = Paths.get(dir.getAbsolutePath(), name).toFile();
-        	if (filename.isFile()) {
-        		return true;
-        	}
-        	
-        	boolean matches = Pattern.compile(filter).matcher(name).matches();
-        	if (!matches) {
-        		System.out.println("Filtering folder: " + name);
-        	}
-        	return matches;
-        });
-        
-        for (final File fileEntry : allFiles) {
-            if (fileEntry.isDirectory()) {
-                System.out.println("Folder:" + fileEntry.getName());
-                List<File> subFolderFiles = getAllFilesInFolder(fileEntry, validFiletypes);
-                files.addAll(subFolderFiles);
-            } else {
-                String filename = fileEntry.getName().toLowerCase();
-                String filetype = FileUtils.getFileType(filename);
-
-                if (!validFiletypes.contains(filetype)) {
-                    skippedFiles.add(new FileProperties(this.folder.getAbsolutePath(), fileEntry));
-                    continue;
-                }
-                files.add(fileEntry);
-            }
-        }
-
-        return files;
     }
     
     private boolean isDuplicate(File file, String checksum, TreeMap<String, FileProperties> map) {
