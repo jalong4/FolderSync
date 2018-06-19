@@ -11,26 +11,38 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
+import com.drew.imaging.mp4.Mp4MetadataReader;
 import com.drew.lang.GeoLocation;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.MetadataException;
+import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifDirectoryBase;
+import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
+import com.drew.metadata.mov.metadata.QuickTimeMetadataDirectory;
+import com.drew.metadata.mp4.Mp4Directory;
 
 import ca.jimlong.FolderSync.Utils.FileUtils;
 import javafx.beans.property.SimpleStringProperty;
+import us.fatehi.pointlocation6709.PointLocation;
+import us.fatehi.pointlocation6709.parse.PointLocationParser;
 
 public class FileProperties {
 
 	public static Map<String, Long> formattedValues = new HashMap<String, Long>();
 	public static final String datePattern = "MMM dd, yyyy 'at' hh:mm a";
+	public static final int TAG_MOV_LOCATION                           = 0x050D;
+	public static final int TAG_CREATION_DATE                          = 0x0506;
+
 	private File file;
 	private GeoLocation geoLocation;
 	private int orientation;
@@ -59,33 +71,37 @@ public class FileProperties {
 			attr = Files.getFileAttributeView(p, BasicFileAttributeView.class).readAttributes();
 		    dateCreated =  (attr == null) ? "" : getFormattedDate(attr.creationTime());
 		    rawDateCreated =  (attr == null) ? new Date(0) : new Date(attr.creationTime().toMillis());
-		    
+		    String fileType = FileUtils.getFileType(file);
 			
-		    // Use date created from EXIF metadata if it exists
 			if (extractMetadata) {
-				Metadata metadata = ImageMetadataReader.readMetadata(file);
+				if (fileType.equals("mov")) {
+					
+					Date date = getVideoCreationDate(file);
 
-				// Read Exif Data
-				Directory directory = metadata.getFirstDirectoryOfType( ExifDirectoryBase.class );
-				if (directory != null) {
-					Date date = directory.getDate(ExifDirectoryBase.TAG_DATETIME );
-					try {
-						this.orientation = directory.getInt(ExifDirectoryBase.TAG_ORIENTATION);
-					} catch (MetadataException e) {
-						// just continue without an error
+					String videoDateCreated = (date == null) ? dateCreated : getFormattedLocalDate(date);
+
+					if (!dateCreated.equals(videoDateCreated)) {
+						dateCreated = videoDateCreated;
+						rawDateCreated = date;
 					}
+					
+					geoLocation = getVideoGeoLocation(file);
+
+				} else {
+					// Read Exif Data
+					Metadata metadata = ImageMetadataReader.readMetadata(file);
+					Directory directory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+					Date date = getCreationDateFromDirectory(directory, ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
+					
 					String exifDateCreated = (date == null) ? dateCreated : getFormattedDate(date);
 
 					if (!dateCreated.equals(exifDateCreated)) {
 						dateCreated = exifDateCreated;
 						rawDateCreated = date;
 					}
-				}
-
-				// Read GPS Data
-				GpsDirectory gpsDirectory = (GpsDirectory) metadata.getFirstDirectoryOfType(GpsDirectory.class);
-				if (gpsDirectory != null) {
-					geoLocation = gpsDirectory.getGeoLocation();
+					
+					this.orientation = getOrientationFromDirectory(directory, ExifDirectoryBase.TAG_ORIENTATION);
+					geoLocation = getGeoLocation(metadata, directory);
 				}
 			}
 
@@ -111,6 +127,89 @@ public class FileProperties {
 		
 	}
 	
+	private GeoLocation getGeoLocation(Metadata metadata, Directory directory) {
+		if (directory != null) {
+			GpsDirectory gpsDirectory = (GpsDirectory) metadata.getFirstDirectoryOfType(GpsDirectory.class);
+			geoLocation = (gpsDirectory != null) ? gpsDirectory.getGeoLocation() : null;
+		}
+		return null;
+	}
+
+	private int getOrientationFromDirectory(Directory directory, int tagOrientation) {
+		if (directory != null) {
+			try {
+				return directory.getInt(ExifDirectoryBase.TAG_ORIENTATION);
+			} catch (MetadataException e) {
+				return 0;
+			}
+		}
+		return 0;
+	}
+	
+	@SuppressWarnings("unused")
+	private void printTag(Directory directory, Tag tag) {
+		System.out.format("[%s] - %s = %s", directory.getName(), tag.getTagName(), tag.getDescription());
+		System.out.println();
+	}
+
+	private GeoLocation getVideoGeoLocation(File file) {
+		
+		Metadata metadata;
+		try {
+			metadata = ImageMetadataReader.readMetadata(file);
+			Directory directory = metadata.getFirstDirectoryOfType(QuickTimeMetadataDirectory.class);
+
+			if (directory != null) {
+				for (Tag tag : directory.getTags()) {
+					if (tag.getTagType() == TAG_MOV_LOCATION) {
+						return parseLocation(tag);
+					}
+				}												
+			}
+		} catch (Exception e) {
+			return null;
+		}
+		
+		return null;
+
+	}
+
+	private Date getCreationDateFromDirectory(Directory directory, int tagType) {
+		return (directory != null) ? directory.getDate(tagType) : null;	
+	}
+	
+	private Date getVideoCreationDate(File file) {
+		
+		// Try ImageMetadataReader first, and fallback to Mp4MetadataReader
+		Metadata metadata;
+		try {
+			metadata = ImageMetadataReader.readMetadata(file);
+			Directory directory = metadata.getFirstDirectoryOfType(QuickTimeMetadataDirectory.class);
+			return getCreationDateFromDirectory(directory, TAG_CREATION_DATE);
+		} catch (Exception e) {
+			try {
+				metadata = Mp4MetadataReader.readMetadata(file);
+				Directory directory = metadata.getFirstDirectoryOfType(Mp4Directory.class);
+				return getCreationDateFromDirectory(directory, Mp4Directory.TAG_CREATION_TIME);
+				
+
+			} catch (Exception e1) {
+				return null;
+			}
+		}
+	}
+
+	private GeoLocation parseLocation(Tag geoTag) {
+		try {
+			PointLocation pointLocation = PointLocationParser.parsePointLocation(geoTag.getDescription());
+			GeoLocation geoLocation = new GeoLocation(pointLocation.getLatitude().getDegrees(), pointLocation.getLongitude().getDegrees());
+//			System.out.println("Location Found: " + geoLocation.toString());
+			return geoLocation;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	public FileProperties(String basePath, File file, String checksum) {
 		// Default case
 		this(basePath, file, checksum, true);
@@ -130,6 +229,13 @@ public class FileProperties {
 	private String getFormattedDate(FileTime date) {
 		SimpleDateFormat df = new SimpleDateFormat(datePattern);
 		return df.format(date.toMillis());
+	}
+	
+	
+	private String getFormattedLocalDate(Date date) {
+		LocalDateTime localDate = LocalDateTime.ofInstant(date.toInstant(), ZoneOffset.systemDefault());
+		DateTimeFormatter df = DateTimeFormatter.ofPattern(datePattern);
+		return df.format(localDate);
 	}
 	
 	private String getFormattedDate(Date date) {

@@ -16,6 +16,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 public class OrganizeFolder {
+    private ChecksumFolder checksumFolder;
     private File folder;
     private List<String> validFiletypes;
     private List<String> systemFiles;
@@ -28,8 +29,9 @@ public class OrganizeFolder {
 	Map<Integer, Map<Integer, List<FileProperties>>> map;
 
 
-    public OrganizeFolder(File folder, Settings settings) {
-        this.folder = folder;
+    public OrganizeFolder(ChecksumFolder checksumFolder, Settings settings) {
+    	this.checksumFolder = checksumFolder;
+        this.folder = checksumFolder.getFolder();
         this.validFiletypes = settings.getValidFiletypes();
         this.systemFiles = settings.getSystemFiles();
         this.skippedFiles = FXCollections.observableArrayList();
@@ -53,7 +55,7 @@ public class OrganizeFolder {
     public void organizeFolder() {
     	
         completed = false;
-        List<File> files = getAllFilesInFolder(folder, validFiletypes);
+        List<File> files = FileUtils.getAllFilesInFolder(checksumFolder, folder, validFiletypes, skippedFiles);
         if (files.size() > 0) {
         	System.out.println("Found " + String.valueOf(files.size()) + " files");
         	System.out.println("Skipping " + String.valueOf(skippedFiles.size()) + " files");
@@ -88,6 +90,7 @@ public class OrganizeFolder {
         					List<FileProperties> monthFiles = new ArrayList<>();
         					monthFiles.add(fileProperties);
         					monthMap.put(month, monthFiles);
+        					map.put(year, monthMap);
         				}
         			} else {
         				Map<Integer, List<FileProperties>> monthMap = new HashMap<>();
@@ -112,7 +115,7 @@ public class OrganizeFolder {
         percentComplete.set(1.0);
         completed = true;
         
-        printMap();
+//        printMap();
         moveFiles();
         removeEmptyDirectories(this.folder);     
         
@@ -121,7 +124,8 @@ public class OrganizeFolder {
     }
 	
 	
-    private void printMap() {
+    @SuppressWarnings("unused")
+	private void printMap() {
     	for (Integer year : map.keySet()) {
     		Map<Integer, List<FileProperties>> monthMap = map.get(year);
     		for (Integer month : monthMap.keySet()) {
@@ -129,7 +133,8 @@ public class OrganizeFolder {
     			for (FileProperties file : monthFiles) {
     				String yearPrefix = (map.keySet().size() == 1) ? "" : year.toString() + "/";
     				String filename = Paths.get(file.getName()).getFileName().toString();
-    				System.out.println("Moving " + file.getName() + " to " + yearPrefix + String.format("%02d", month.intValue()) + '/' + filename);
+    				Path toPath = Paths.get(folder.getAbsolutePath(), yearPrefix + String.format("%02d", month.intValue()) + '/' + filename);
+    				System.out.println("Moving " + file.getName() + " to " + toPath.toString());
     			}
     		}
     	}
@@ -146,8 +151,7 @@ public class OrganizeFolder {
     				String yearPrefix = (map.keySet().size() == 1) ? "" : year.toString() + "/";
     				String filename = Paths.get(file.getName()).getFileName().toString();
     				Path toPath = Paths.get(folder.getAbsolutePath(), yearPrefix + String.format("%02d", month.intValue()) + '/' + filename);
-    				System.out.println("Moving " + file.getName() + " to " + toPath.toString());
-    				if (FileUtils.moveFile(fromPath, toPath)) {
+    				if (FileUtils.moveFileAndRenameTargetIfTargetExists(fromPath, toPath)) {
     					moved.add(file);
     				}
     			}
@@ -167,6 +171,12 @@ public class OrganizeFolder {
                 	}
                 } else {
                 	System.out.println("Directory " + fileEntry.getAbsolutePath() + " is not empty.");
+                	if (fileEntry.listFiles().length < 3) {
+                		for (File f : fileEntry.listFiles()) {
+                			System.out.println("Directory " + fileEntry.getAbsolutePath() + " is not empty.");
+                			System.out.println("File: " + f.getAbsolutePath());
+                		}
+                	}
                 }
             } else {
                  if (systemFiles.contains(fileEntry.getName())) {
@@ -178,27 +188,27 @@ public class OrganizeFolder {
         }	
     }
 
-	private List<File> getAllFilesInFolder(File folder, List<String> validFiletypes) {
-
-        List<File> files = new ArrayList<File>();
-
-        for (final File fileEntry : folder.listFiles()) {
-            if (fileEntry.isDirectory()) {
-                System.out.println("Folder:" + fileEntry.getName());
-                List<File> subFolderFiles = getAllFilesInFolder(fileEntry, validFiletypes);
-                files.addAll(subFolderFiles);
-            } else {
-                String filename = fileEntry.getName().toLowerCase();
-                String filetype = FileUtils.getFileType(filename);
-
-                if (!validFiletypes.contains(filetype)) {
-                    skippedFiles.add(new FileProperties(this.folder.getAbsolutePath(), fileEntry));
-                    continue;
-                }
-                files.add(fileEntry);
-            }
-        }
-
-        return files;
-    }
+//	private List<File> getAllFilesInFolder(File folder, List<String> validFiletypes) {
+//
+//        List<File> files = new ArrayList<File>();
+//
+//        for (final File fileEntry : folder.listFiles()) {
+//            if (fileEntry.isDirectory()) {
+//                System.out.println("Folder:" + fileEntry.getName());
+//                List<File> subFolderFiles = getAllFilesInFolder(fileEntry, validFiletypes);
+//                files.addAll(subFolderFiles);
+//            } else {
+//                String filename = fileEntry.getName().toLowerCase();
+//                String filetype = FileUtils.getFileType(filename);
+//
+//                if (!validFiletypes.contains(filetype)) {
+//                    skippedFiles.add(new FileProperties(this.folder.getAbsolutePath(), fileEntry));
+//                    continue;
+//                }
+//                files.add(fileEntry);
+//            }
+//        }
+//
+//        return files;
+//    }
 }

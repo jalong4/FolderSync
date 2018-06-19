@@ -568,6 +568,7 @@ public class MainController implements Initializable {
 			TreeItem<String> item = treeView.getSelectionModel().getSelectedItem();
 			
 			organizeFolderMenuItem.setDisable(true);
+			organizeFolderMenuItem.setId("");
 			if (item == null) {
 				return;
 			}
@@ -594,6 +595,10 @@ public class MainController implements Initializable {
 			} else if (e.getButton() == MouseButton.PRIMARY) {
 				
 				if (folder.equals(settings.constants.folderNames.destFolder)) {
+					organizeFolderMenuItem.setId(settings.getDestFolder());
+					organizeFolderMenuItem.setDisable(false);
+				} else if (folder.equals(settings.constants.folderNames.srcFolder)) {
+					organizeFolderMenuItem.setId(settings.getSrcFolder());
 					organizeFolderMenuItem.setDisable(false);
 				}
 				
@@ -840,7 +845,7 @@ public class MainController implements Initializable {
         organizeFolderMenuItem.setDisable(true);
        
         organizeFolderMenuItem.setOnAction(e -> {
-            performOrganizeFolder(); 
+            performOrganizeFolder(organizeFolderMenuItem.getId()); 
         });
         
 		findSimilarInFolderMenuItem.disableProperty().bind(organizeFolderMenuItem.disableProperty());
@@ -883,12 +888,21 @@ public class MainController implements Initializable {
 		}.start();	
 	}
 
-	private void performOrganizeFolder() {
-		System.out.println("organizing Folder " + settings.getDestFolder() + "...");
+	private void performOrganizeFolder(String folderToOrganize) {
+		System.out.println("organizing Folder " + folderToOrganize + "...");
 
-		OrganizeFolder folder = new OrganizeFolder(new File(settings.getDestFolder()), settings);
-		destinationProgressBar.progressProperty().bind(folder.percentComplete);
-		destinationProgressBar.setVisible(true);
+
+		String filter = getFilterFromFolderName(folderToOrganize);
+		ChecksumFolder checksumFolder = new ChecksumFolder(new File(folderToOrganize), filter, settings, cache);
+		OrganizeFolder folder = new OrganizeFolder(checksumFolder, settings);
+		
+		if (folderToOrganize.equals(settings.getSrcFolder())) {
+			sourceProgressBar.progressProperty().bind(folder.percentComplete);
+			sourceProgressBar.setVisible(true);			
+		} else {
+			destinationProgressBar.progressProperty().bind(folder.percentComplete);
+			destinationProgressBar.setVisible(true);
+		}
       
 		new Thread() {
 		    public void run() {
@@ -896,6 +910,17 @@ public class MainController implements Initializable {
 		    }
 		}.start();
 		
+	}
+
+	private String getFilterFromFolderName(String folderToOrganize) {
+		if (folderToOrganize.equals(settings.constants.folderNames.srcFolder)) {
+			return settings.getSrcFolderFilter();
+		} else if (folderToOrganize.equals(settings.constants.folderNames.destFolder)) {
+			return settings.getDestFolderFilter();
+		}
+		
+		return null;
+
 	}
 
 	private void updateDetailsOnTreeView() {

@@ -1,10 +1,8 @@
 package ca.jimlong.FolderSync.Models;
 import ca.jimlong.FolderSync.Utils.FileUtils;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -27,6 +25,7 @@ public class ChecksumFolder {
     private String filter;
     private SimilarFiles _similarFiles;
     private ChecksumCache cache;
+    private boolean limitDupsToSameParentFolder;
     private List<String> validFiletypes;
     public TreeMap<String, FileProperties> map;
 
@@ -51,6 +50,7 @@ public class ChecksumFolder {
         this.map =  new TreeMap<String, FileProperties>();
         this.checksumCompleted = false;
         this.cache = cache;
+        this.limitDupsToSameParentFolder = settings.isLimitDupsToSameParentFolder();
         this._similarFiles = new SimilarFiles(folder, settings);
     }
     
@@ -59,6 +59,10 @@ public class ChecksumFolder {
 	}
 
 
+
+	public String getFilter() {
+		return filter;
+	}
 
 	private byte[] createChecksum(String filename) throws Exception {
 		
@@ -137,7 +141,7 @@ public class ChecksumFolder {
         	
         	// only filter top level folders
         	
-        	if (filter.isEmpty()) {
+        	if (filter == null || filter.isEmpty()) {
         		return true;
         	}
         	
@@ -190,7 +194,7 @@ public class ChecksumFolder {
         	}
         	
         	// ignore dups from other subfolders
-        	if (!file.getParent().equals(originalFile.getParent())) {
+        	if (limitDupsToSameParentFolder && !file.getParent().equals(originalFile.getParent())) {
         		return false;
         	}
         	

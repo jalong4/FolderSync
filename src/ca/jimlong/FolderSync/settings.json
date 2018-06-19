@@ -1,11 +1,13 @@
 {
-    "srcFolder": "/Volumes/Cloud Drives/Google Drive/Media/Photos",
-    "destFolder": "/Volumes/Cloud Drives/Google Drive/Media/Photos",
-    "srcFolderFilter": "^(19|20)\\d{2}$",
-    "destFolderFilter": "^(19|20)\\d{2}$",
-    "validVideoFiletypes": ["mov", "mp4", "m4v", "mpg"],
+    "srcFolder": "/Users/jalong4/Desktop",
+    "destFolder": "/Volumes/Cloud Drives/Google Drive/Media/Photos/2005",
+    "#srcFolderFilter": "^(19|20)\\d{2}$",
+    "#destFolderFilter": "^(19|20)\\d{2}$",
+    "#destFolderFilter": "^(2017|2018)$",
+    "limitDupsToSameParentFolder": true,
+    "validVideoFiletypes": ["mov", "mp4", "m4v", "mpg", "avi"],
     "validPhotoFiletypes": ["jpg", "png", "heic", "gif", "jpeg", "nef", "cr2"],
-    "systemFiles": [".DS_Store"],
+    "systemFiles": [".DS_Store", "Icon\r"],
     "cacheFile": ".cache.json",
     "constants" : {
     	"folderNames": {

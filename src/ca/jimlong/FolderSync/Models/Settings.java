@@ -17,6 +17,7 @@ public class Settings {
     private List<String> validPhotoFiletypes;
     private List<String> systemFiles;
     private String cacheFile;
+    private boolean limitDupsToSameParentFolder;
 	public Constants constants = new Constants();
     
     public class Constants {
@@ -83,6 +84,10 @@ public class Settings {
 		return cacheFile;
 	}
 
+	public boolean isLimitDupsToSameParentFolder() {
+		return limitDupsToSameParentFolder;
+	}
+
 	public Settings(File settingsFile) {
          
         if (!settingsFile.exists()) {
@@ -106,10 +111,17 @@ public class Settings {
 		this.destFolderFilter = settings.destFolderFilter;
 		this.validPhotoFiletypes = settings.validPhotoFiletypes;
 		this.validVideoFiletypes = settings.validVideoFiletypes;
-		this.validFiletypes = new ArrayList<>(validPhotoFiletypes);
-		this.validFiletypes.addAll(validVideoFiletypes);
+		
+		if (validPhotoFiletypes != null) {
+			this.validFiletypes = new ArrayList<>(validPhotoFiletypes);
+			this.validFiletypes.addAll(validVideoFiletypes);
+		} else {
+			this.validFiletypes = new ArrayList<>(validVideoFiletypes);
+		}
+		
 		this.systemFiles = settings.systemFiles;
 		this.cacheFile = settings.cacheFile;
+		this.limitDupsToSameParentFolder = settings.limitDupsToSameParentFolder;
 		this.constants = settings.constants;
 	}
 
